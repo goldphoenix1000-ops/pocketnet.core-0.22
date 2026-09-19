@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PocketnetCore Monitoring</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0px;
+            background-color: #fff;
+        }
+        table {
+            width: 100%;
+            max-width: 800px;
+            margin: auto;
+            border-collapse: collapse;
+        }
+        header {
+            margin: auto;
+            width: 800px;
+            padding: 1.5em;
+        }
+        tr:hover td {
+            background-color: #a2d6ff;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            text-align: left;
+            width: 20%;
+        }
+        .tHead {
+            background-color: #c8dcf1;
+        }
+        td {
+            text-align: right;
+            padding: 2px 5px 2px 5px;
+            word-break: break-all;
+            font-size: 0.7em;
+        }
+        .tKey {
+            text-align: left;
+            word-break: normal;
+            background-color: #f9f9f9;
+        }
+        .tValueSql {
+        }
+        #updateCounter {
+            text-align: right;
+        }
+        .tEgg {
+            background-color: white;
+        }
+        .tOdd {
+            background-color: #f6fbff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div style='float: left;'>PocketnetCore Monitoring</div>
+        <div id='updateCounter' style='float: right;'></div>
+    </header>
+    
+    <div id='monitoringTablesBox'>
+        <table class="monitoringTable"></table>
+    </div>
+    
+    <script>
+
+        // ------------------------------------
+        
+        function isObject(object) {
+            return object != null && typeof object === 'object';
+        }
+        
+        function deepEqual(object1, object2) {
+            if (!isObject(object1) || !isObject(object2))
+                return false;
+            
+            const keys1 = Object.keys(object1);
+            const keys2 = Object.keys(object2);
+        
+            if (keys1.length !== keys2.length) {
+                return false;
+            }
+        
+            for (const key of keys1) {
+                const val1 = object1[key];
+                const val2 = object2[key];
+                const areObjects = isObject(val1) && isObject(val2);
+                if (areObjects && !deepEqual(val1, val2) || !areObjects && val1 !== val2) {
+                    return false;
+                }
+            }
+        
+            return true;
+        }
+
+        // ------------------------------------
+
+        var updateCounter = 0;
+        
+        setInterval(function() {
+            document.getElementById('updateCounter').innerText = 'Last update: ' + updateCounter + ' seconds ago';
+            updateCounter++;
+        }, 1000);
+
+        // ------------------------------------
+
+        var sqlBench = {}
+
+        var box = document.getElementById('monitoringTablesBox');
+
+        var cleanBox = function() {
+            document.querySelectorAll('.monitoringTable').forEach(function(t) {
+                t.remove();
+            });
+        }
+
+        var drawTable = function(section, colSpan=2) {
+            // New table
+            let table = document.createElement("table");
+            table.classList.add('monitoringTable')
+            box.appendChild(table)
+
+            // Header
+            let row = table.insertRow(-1);
+            let cellHead = row.insertCell(-1);
+            cellHead.innerText = section;
+            cellHead.classList.add('tHead');
+            cellHead.colSpan = colSpan;
+
+            return table
+        }
+
+        var drawRowHeader = function(row, text, odd) {
+            let cellKey = row.insertCell(-1);
+            cellKey.innerText = text;
+            cellKey.classList.add('tKey');
+            cellKey.classList.add(odd ? 'tOdd' : 'tEgg');
+        }
+
+        var drawRowCell = function(row, text, odd) {
+            let cellValue = row.insertCell(-1);
+            cellValue.innerText = text;
+            cellValue.classList.add('tValue');
+            cellValue.classList.add(odd ? 'tOdd' : 'tEgg');
+        }
+
+        var lastSqlBenchData;
+        var drawSQLBench = function(data) {
+            if (!deepEqual(lastSqlBenchData, data)) {
+                lastSqlBenchData = data;
+                
+                for (let key in lastSqlBenchData) {
+                    let vals = data[key].split(' / ');
+    
+                    if (!sqlBench[key]) {
+                        sqlBench[key] = {
+                            'avg': 0,
+                            'sum': 0,
+                            'cnt': 0,
+                        };
+                    }
+    
+                    sqlBench[key]['sum'] += Number(vals[1].replace('ms', ''))
+                    sqlBench[key]['cnt'] += Number(vals[2])
+                    sqlBench[key]['avg'] += sqlBench[key]['sum'] / sqlBench[key]['cnt']
+                }
+            }
+
+            let _sqlBench = [];
+            for (let key in sqlBench) {
+                _sqlBench.push({
+                    'key': key,
+                    'data': sqlBench[key]
+                });
+            }
+            _sqlBench.sort((a, b) => b.data.sum - a.data.sum);
+
+            // Table & Header
+            let table = drawTable('SQLBench', 5);
+
+            // Rows
+            let odd = true;
+            for (let r in _sqlBench) {
+                let row = table.insertRow(-1);
+                row.classList.add('tRowSql');
+
+                drawRowHeader(row, _sqlBench[r].key, odd, 5);
+                drawRowCell(row, _sqlBench[r].data['avg'].toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 }), odd);
+                drawRowCell(row, _sqlBench[r].data['sum'].toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 }), odd);
+                drawRowCell(row, _sqlBench[r].data['cnt'].toLocaleString(undefined, { maximumFractionDigits: 0 }), odd);
+                odd = !odd;
+            }
+        }
+        
+        var update = function() {
+            fetch(location.protocol + '//' + location.host.split(':')[0] + ':38081/rpc/getlateststat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'method': 'getlateststat',
+                    'params': []
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP error ' + response.status);
+                }
+                return response.json();
+            })
+            .then(json => {
+                updateCounter = 0;
+                cleanBox();
+                
+                for (let section in json.result) {
+                    if (section == 'RPC')
+                        continue;
+
+                    if (section == 'SQLBench') {
+                        drawSQLBench(json.result[section]);
+                        continue;
+                    }
+
+                    // Table & Header
+                    let table = drawTable(section);                    
+
+                    // Rows
+                    let odd = true;
+                    for (let key in json.result[section]) {
+                        let row = table.insertRow(-1);
+                        drawRowHeader(row, key, odd);
+                        drawRowCell(row, json.result[section][key], odd);
+                        odd = !odd;
+                    }
+                }
+            })
+            .catch(function() {
+                cleanBox();
+                let errSpan = document.createElement("div");
+                errSpan.classList.add('error')
+                errSpan.innerText = 'Error fetching data from API';
+            });
+        }
+        setInterval(update, 15000);
+        update()
+    </script>
+</body>
+</html>

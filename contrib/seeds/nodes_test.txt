@@ -1,0 +1,11 @@
+# List of fixed seed nodes for testnet
+94.156.128.149:36060
+116.203.219.28:36060
+157.90.228.34:36060
+
+# Onion nodes
+2rsyqouzsdaaipyju5wxvyybxxqsokm2jvixvewmsfors2qsqppgd5id.onion:36060
+
+# I2P nodes
+vqq4yhe7asjiaj2axvjuvh7n3fmn4ctofwxesq3qccdxfkdio2aq.b32.i2p:0
+

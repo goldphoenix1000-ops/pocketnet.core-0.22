@@ -1,0 +1,12 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=<VERSION>
+Name=PocketnetCore
+GenericName=PocketnetCore
+Exec=pocketcoin-qt
+Terminal=false
+Icon=/usr/local/share/pixmaps/pocketcoin.png
+StartupWMClass=pocketcoin-qt
+Type=Application
+Categories=Application;Network;
+Comment=PocketnetCore Node GUI
