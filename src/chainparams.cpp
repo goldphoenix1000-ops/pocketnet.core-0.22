@@ -145,10 +145,10 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0xb9;
-        pchMessageStart[1] = 0xe2;
-        pchMessageStart[2] = 0xd7;
-        pchMessageStart[3] = 0xaf;
+        pchMessageStart[0] = 0x7b; // Родовой код Синей Бересты
+        pchMessageStart[1] = 0x80; // Порт Сварога 80
+        pchMessageStart[2] = 0x27; // Порт Сварога 27
+        pchMessageStart[3] = 0x16; // Кон 16 Чертогов
 
         nDefaultPort = 8027;
         nPruneAfterHeight = 100000;
