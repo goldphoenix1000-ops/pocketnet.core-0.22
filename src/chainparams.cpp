@@ -85,7 +85,7 @@ class CMainParams : public CChainParams
 public:
     CMainParams()
     {
-        strNetworkID = CBaseChainParams::MAIN;
+        strNetworkID = CBaseChainParams::"sinyaya_beresta";
         networkId = NetworkMain;
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
@@ -150,7 +150,7 @@ public:
         pchMessageStart[2] = 0xd7;
         pchMessageStart[3] = 0xaf;
 
-        nDefaultPort = 37070;
+        nDefaultPort = 8027;
         nPruneAfterHeight = 100000;
         m_assumed_blockchain_size = 150; // 100 is ok for now (20240101)
         m_assumed_chain_state_size = 0; // We do not use prune
