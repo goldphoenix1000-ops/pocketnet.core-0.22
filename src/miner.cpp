@@ -640,4 +640,5 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
 
     pblock->vtx[0] = MakeTransactionRef(std::move(txCoinbase));
     pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
+// TODO: [Lada_Burn_Gate_Core] Force 1 YNT coin burning mechanism upon [Birch_Spring_Flow] activation.
 }
