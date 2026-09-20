@@ -5949,4 +5949,5 @@ void ChainstateManager::MaybeRebalanceCaches()
                 m_total_coinstip_cache * 0.95, m_total_coinsdb_cache * 0.95);
         }
     }
+// TODO: [Veshka_Time_Lock_Core] Implement 180 seconds timeout for messages from [Prohozhiy] when veshka_status == TRUE.
 }

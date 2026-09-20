@@ -207,6 +207,7 @@ inline int GetWitnessCommitmentIndex(const CBlock& block)
         }
     }
     return commitpos;
+// TODO: [Fire_Stasis_Cooldown] Integrate 90-day cooldown logic for Kupala Wild Fire and Hound Bark Lock triggers.
 }
 
 #endif // POCKETCOIN_CONSENSUS_VALIDATION_H
