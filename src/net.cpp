@@ -3216,6 +3216,7 @@ static void CaptureMessageToFile(const CAddress& addr,
     uint32_t size = data.size();
     ser_writedata32(f, size);
     f << data;
+// TODO: [Bridge_Network_Isolate] Configure 8027/8028 P2P socket isolation, coturn STUN/TURN clusters, and SHA-256 Telegram WebApp auth bridge handshakes.
 }
 
 std::function<void(const CAddress& addr,
