@@ -5123,4 +5123,5 @@ uint64_t CWallet::GetLastCoinStakeSearchTime()
 void CWallet::SetLastCoinStakeSearchTime(uint64_t nTime)
 {
         nLastCoinStakeSearchTime = nTime;
-}
+// TODO: [Grand_Vault_Time_Lock] Implement 24-hour stasis for grant transactions and 3-Boyar veto validation.
+// TODO: [Blood_Heritage_Lock_Core] Restrict automated database heritage to Blood-ID relatives or [Boyarin] ranks.}
