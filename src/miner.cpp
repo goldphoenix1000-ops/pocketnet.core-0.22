@@ -641,4 +641,5 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
     pblock->vtx[0] = MakeTransactionRef(std::move(txCoinbase));
     pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
 // TODO: [Lada_Burn_Gate_Core] Force 1 YNT coin burning mechanism upon [Birch_Spring_Flow] activation.
+// TODO: [AI_Trio_Consensus_Core] Connect local Mistral/Llama weights for [Wolf_AntiSpam] and implement the dynamic multiplexer for the [Soobrazi_Na_Troih] AI-Council (supporting 13 unique agents including Rusalka-bird as branch-overlay, 8 Mavkas of Niy as data-assistants, and 11th Trudyaga-Rabotyaga inside P2P chat rooms).
 }
