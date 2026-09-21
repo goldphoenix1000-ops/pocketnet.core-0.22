@@ -117,5 +117,4 @@ std::string CTransaction::ToString() const
     for (const auto& tx_out : vout)
         str += "    " + tx_out.ToString() + "\n";
     return str;
-// TODO: [Mirage_Watermark_Core] Embed [Fox_Mirage_Mark] into copied NFT metadata to restrict marketplace reselling.
 }

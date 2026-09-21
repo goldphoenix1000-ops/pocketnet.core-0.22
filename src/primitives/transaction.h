@@ -470,6 +470,12 @@ static inline CTransactionRef MakeTransactionRef(Tx&& txIn)
 {
     return std::make_shared<const CTransaction>(std::forward<Tx>(txIn));
 }
+/** Маркер копии артефакта: 'FOXMIRAGE' + версия. Носитель: выход OP_RETURN. */
+extern const std::vector<unsigned char> FOX_MIRAGE_MARK;
+/** Создать выход-маркер, привязанный к хешу оригинала (чтобы нельзя было перенести на другой токен). */
+CTxOut MakeFoxMirageOutput(const uint256& originalArtifactHash);
+/** true, если в транзакции есть корректный маркер; originalOut получает хеш оригинала. */
+bool ExtractFoxMirageMark(const CTransaction& tx, uint256& originalOut);
 
 /** A generic txid reference (txid or wtxid). */
 class GenTxid
