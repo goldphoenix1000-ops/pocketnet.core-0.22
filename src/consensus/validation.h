@@ -7,6 +7,10 @@
 #define POCKETCOIN_CONSENSUS_VALIDATION_H
 
 #include <string>
+#include <cstdint>
+#include <map>
+#include <optional>
+#include <utility>
 #include <version.h>
 #include <consensus/consensus.h>
 #include <primitives/transaction.h>
@@ -207,7 +211,75 @@ inline int GetWitnessCommitmentIndex(const CBlock& block)
         }
     }
     return commitpos;
-// TODO: [Fire_Stasis_Cooldown] Integrate 90-day cooldown logic for Kupala Wild Fire and Hound Bark Lock triggers.
 }
+/** Триггеры социального консенсуса, для которых действует cooldown по чат-локации. */
+enum class SocialTrigger : uint8_t {
+    KUPALA_WILD_FIRE = 1, //!< Kupala_Wild_Fire
+    HOUND_BARK_LOCK  = 2, //!< Hound_Bark_Lock
+};
 
+/** Cooldown: 90 суток в секундах (консенсусная константа, менять только хардфорком). */
+static constexpr int64_t SOCIAL_TRIGGER_COOLDOWN_SECONDS{90LL * 24 * 60 * 60}; // 7 776 000
+
+/**
+ * Учёт cooldown для (ID чат-локации, тип триггера).
+ * Время берётся ТОЛЬКО из MTP (pindexPrev->GetMedianTimePast()), а не из системных часов
+ * и не из nTime блока, иначе разные узлы могут разойтись во мнениях (форк консенсуса).
+ */
+class SocialTriggerCooldown
+{
+private:
+    using Key = std::pair<std::string, SocialTrigger>;
+    std::map<Key, int64_t> m_last_fired; //!< MTP блока, в котором триггер сработал последний раз
+
+public:
+    /** Момент MTP, начиная с которого триггер снова разрешён (0, если ещё не срабатывал). */
+    int64_t AvailableAt(const std::string& chat_id, SocialTrigger trigger) const
+    {
+        auto it = m_last_fired.find({chat_id, trigger});
+        return it == m_last_fired.end() ? 0 : it->second + SOCIAL_TRIGGER_COOLDOWN_SECONDS;
+    }
+
+    /** true, если cooldown ещё идёт. Если MTP < последнего срабатывания (аномалия) - считаем, что идёт. */
+    bool IsOnCooldown(const std::string& chat_id, SocialTrigger trigger, int64_t mtp) const
+    {
+        auto it = m_last_fired.find({chat_id, trigger});
+        if (it == m_last_fired.end()) return false;
+        return mtp < it->second + SOCIAL_TRIGGER_COOLDOWN_SECONDS;
+    }
+
+    /** Проверка при валидации транзакции/блока (состояние не меняет). */
+    bool Check(const std::string& chat_id, SocialTrigger trigger, int64_t mtp, TxValidationState& state) const
+    {
+        if (IsOnCooldown(chat_id, trigger, mtp)) {
+            return state.Invalid(TxValidationResult::TX_SOCIAL_CONSENSUS,
+                                 "social-trigger-cooldown",
+                                 "chat=" + chat_id + " cooldown until MTP " +
+                                     std::to_string(AvailableAt(chat_id, trigger)));
+        }
+        return true;
+    }
+
+    /**
+     * Фиксация срабатывания при ConnectBlock. Возвращает прежнее значение,
+     * которое нужно сохранить в undo-данных для отката при реорге.
+     */
+    std::optional<int64_t> Record(const std::string& chat_id, SocialTrigger trigger, int64_t mtp)
+    {
+        std::optional<int64_t> prev;
+        auto [it, inserted] = m_last_fired.try_emplace({chat_id, trigger}, mtp);
+        if (!inserted) {
+            prev = it->second;
+            it->second = mtp;
+        }
+        return prev;
+    }
+
+    /** Откат при DisconnectBlock: вернуть прежнее значение (или удалить запись). */
+    void Undo(const std::string& chat_id, SocialTrigger trigger, std::optional<int64_t> prev)
+    {
+        if (prev) m_last_fired[{chat_id, trigger}] = *prev;
+        else m_last_fired.erase({chat_id, trigger});
+    }
+};
 #endif // POCKETCOIN_CONSENSUS_VALIDATION_H
