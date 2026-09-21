@@ -198,6 +198,10 @@ static const CRPCConvertParam vRPCConvertParams[] =
         {"getuserstate",                  1, "time"},
         {"getaccountearning",             1, "height"},
         {"getaccountearning",             2, "depth"},
+		        // Контур II-III: Наливной Налог и Казначейство Игрищ
+        // (RPC-методы должны быть зарегистрированы на стороне сервера в rpc/*.cpp)
+        {"lighttransfer",                 2, "amount"},
+        {"gamepayout",                    1, "pot"},
     };
 // clang-format on
 
@@ -301,6 +305,4 @@ UniValue RPCConvertNamedValues(const std::string& strMethod, const std::vector<s
     }
 
     return params;
-// TODO: [Apple_Tax_Circulation_Logic] Implement 27% tax deduction for P2P Light transfers and 72/13/15% payout distribution matrix.
-// TODO: [Lead_Frontend_UI_UX_Core] Implement React/TypeScript WebApp supporting Single RU start (with dynamic UA/EN hooks), 16 Unique Чертогов Trees, Mirror 16/27min Idle Prank with swing, Audio Voice slots, and 3-tier Performance options (Light/Medium/High).
 }
