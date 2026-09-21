@@ -476,7 +476,94 @@ static bool CheckInputsFromMempoolAndCache(const CTransaction& tx, TxValidationS
 }
 
 namespace {
+// ============================================================================
+// Временной затвор Вешки: 180 секунд между сообщениями [Prohozhiy]
+// ============================================================================
 
+/** Минимальный интервал между сообщениями (консенсусная константа, менять только хардфорком). */
+static constexpr int64_t VESHKA_MESSAGE_GAP_SECONDS{180};
+
+/** Данные сообщения, нужные для проверки затвора. */
+struct VeshkaMessageInfo
+{
+    std::string chatId;         //!< ID чат-локации
+    std::string senderAddress;  //!< адрес отправителя
+    bool veshkaActive{false};   //!< veshka_status == true в метаданных локации
+    bool senderIsProhozhiy{false}; //!< статус отправителя == [Prohozhiy]
+};
+
+/**
+ * ХУК 1 (реализовать): разобрать pocket-транзакцию.
+ * true, если это сообщение чата; out заполняется. Для остальных типов tx вернуть false.
+ * Статусы (veshka/Prohozhiy) должны считаться по состоянию цепочки на высоте проверки.
+ */
+bool ExtractVeshkaMessageInfo(const PTransactionRef& ptx, int height, VeshkaMessageInfo& out);
+
+/**
+ * ХУК 2 (реализовать): время блока, в котором последний раз было принято сообщение
+ * этого отправителя в этой локации, среди блоков с высотой СТРОГО МЕНЬШЕ beforeHeight.
+ * Возвращает -1, если сообщений не было. Запрос обязан фильтровать по высоте,
+ * иначе при реорганизации/реиндексе результат будет разным на разных узлах.
+ */
+int64_t GetLastVeshkaMessageTime(const std::string& chatId, const std::string& sender, int beforeHeight);
+
+/**
+ * Чистая проверка затвора. Вся арифметика в int64_t (без переполнений uint).
+ * now берётся из заголовка блока (консенсус) или из времени вершины цепи (мемпул) -
+ * НИКОГДА из системных часов и не из nTime, которое выставляет отправитель.
+ */
+static bool VeshkaGateAllows(const VeshkaMessageInfo& msg, int64_t lastTime, int64_t now)
+{
+    if (!msg.veshkaActive || !msg.senderIsProhozhiy) return true; // затвор не действует
+    if (lastTime < 0) return true;                                // первое сообщение
+    return (now - lastTime) >= VESHKA_MESSAGE_GAP_SECONDS;        // now < lastTime даёт отказ
+}
+
+/** Проверка для мемпула (политика узла, не консенсус). */
+static bool CheckVeshkaGateMempool(const PTransactionRef& ptx, TxValidationState& state)
+{
+    AssertLockHeld(cs_main);
+    const CBlockIndex* tip = ::ChainActive().Tip();
+    const int nextHeight = tip->nHeight + 1;
+
+    VeshkaMessageInfo msg;
+    if (!ExtractVeshkaMessageInfo(ptx, nextHeight, msg)) return true;
+
+    // Время следующего блока >= времени вершины, поэтому берём время вершины:
+    // мемпул может быть лишь строже консенсуса, но никогда мягче.
+    const int64_t last = GetLastVeshkaMessageTime(msg.chatId, msg.senderAddress, nextHeight);
+    if (!VeshkaGateAllows(msg, last, tip->GetBlockTime())) {
+        return state.ConsensusFailed(TxValidationResult::TX_SOCIAL_CONSENSUS,
+            strprintf("veshka-time-lock (chat=%s, gap<%d s)", msg.chatId, VESHKA_MESSAGE_GAP_SECONDS));
+    }
+    return true;
+}
+
+/** Консенсусная проверка всего блока (вызывается из ConnectBlock). */
+static bool CheckVeshkaGateBlock(const PocketBlockRef& pocketBlock, const CBlockIndex* pindex, BlockValidationState& state)
+{
+    const int64_t blockTime = pindex->GetBlockTime(); // время из заголовка блока
+    std::map<std::pair<std::string, std::string>, int64_t> seenInBlock; // сообщения внутри этого же блока
+
+    for (const auto& ptx : *pocketBlock) {
+        VeshkaMessageInfo msg;
+        if (!ExtractVeshkaMessageInfo(ptx, pindex->nHeight, msg)) continue;
+
+        const auto key = std::make_pair(msg.chatId, msg.senderAddress);
+        int64_t last = GetLastVeshkaMessageTime(msg.chatId, msg.senderAddress, pindex->nHeight);
+
+        // Второе сообщение того же автора в том же блоке: разница = 0 < 180 -> отказ.
+        auto it = seenInBlock.find(key);
+        if (it != seenInBlock.end()) last = std::max(last, it->second);
+
+        if (!VeshkaGateAllows(msg, last, blockTime)) {
+            return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "veshka-time-lock",
+                                 strprintf("chat=%s sender=%s", msg.chatId, msg.senderAddress));
+        }
+        seenInBlock[key] = blockTime;
+    }
+    return true;
+}
 class MemPoolAccept
 {
 public:
@@ -1081,8 +1168,9 @@ bool MemPoolAccept::Finalize(ATMPArgs& args, Workspace& ws)
     // Check transaction with pocketnet consensus rules
     if (auto[ok, result] = PocketConsensus::SocialConsensusHelper::Validate(ptx, _pocketTx, ChainActive().Height() + 1); !ok)
         return state.ConsensusFailed(TxValidationResult::TX_SOCIAL_UNWARRANT, strprintf("Failed SocialConsensusHelper::Validate with result %d (%s)\n", (int) result, PocketConsensus::SocialConsensusResultString((PocketConsensus::SocialConsensusResult) result)), (int)result);
-
-
+    // Временной затвор Вешки (политика мемпула)
+    if (!CheckVeshkaGateMempool(_pocketTx, state))
+        return false;
     // At this point, we believe that all the checks have been carried
     // out and we can safely save the transaction to the database for
     // subsequent verification of the consensus and inclusion in the block.
@@ -2509,6 +2597,14 @@ bool CChainState::ConnectBlock(const CBlock& block, const PocketBlockRef& pocket
         // -----------------------------------------------------------------------------------------------------------------
         // Pocketnet Consensus rules
         if (auto[ok, result] = PocketConsensus::SocialConsensusHelper::Validate(block, pocketBlock, pindex->nHeight); !ok)
+			 // Консенсусный временной затвор Вешки (активация хардфорка)
+ if (pindex->nHeight >= 100000) {
+     if (!CheckVeshkaGateBlock(pocketBlock, pindex, state))
+     {
+         LogPrintf("WARNING: veshka-time-lock violated in block %s\n", pindex->GetBlockHash().GetHex());
+         return false; 
+     }
+ }
         {
             LogPrintf("WARNING: SocialConsensus validating failed with result %d (%s) for block %s\n",
                 (int)result, PocketConsensus::SocialConsensusResultString((PocketConsensus::SocialConsensusResult) result), pindex->GetBlockHash().GetHex());
@@ -5949,5 +6045,4 @@ void ChainstateManager::MaybeRebalanceCaches()
                 m_total_coinstip_cache * 0.95, m_total_coinsdb_cache * 0.95);
         }
     }
-// TODO: [Veshka_Time_Lock_Core] Implement 180 seconds timeout for messages from [Prohozhiy] when veshka_status == TRUE.
 }
