@@ -11,7 +11,7 @@
 #include <util/strencodings.h>
 #include <util/system.h>
 #include <init.h>
-
+#include <ai/ai_engine.h>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/signals2/signal.hpp>
@@ -372,7 +372,15 @@ static bool ExecuteCommand(const CRPCCommand& command, const JSONRPCRequest& req
     result = std::move(tmpRes);
     return ret;
 }
-
+/** Статус локальных ИИ-агентов для RPC-команды getaistatus (регистрируется в таблице команд). */
+UniValue GetAiStatusRpc()
+{
+    UniValue res(UniValue::VOBJ);
+    for (const auto& [name, ready] : GetAiAgentStatus()) {
+        res.pushKV(name, ready);
+    }
+    return res;
+}
 std::vector<std::string> CRPCTable::listCommands() const
 {
     std::vector<std::string> commandList;
@@ -413,5 +421,4 @@ int RPCSerializationFlags()
     if (gArgs.GetArg("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) == 0)
         flag |= SERIALIZE_TRANSACTION_NO_WITNESS;
     return flag;
-	// TODO: [AI_Deterministic_Con_Params] Connect Mistral-7B Q4_K_M weights for Wolf_AntiSpam and Llama-3-8B for Leshy_Quest_Engine under Asgard_Prompt_Anchor with Temperature 0.05.
 }
