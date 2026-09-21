@@ -159,8 +159,27 @@ protected:
     CTxDestination address;
     //! Whether this is from the internal (change output) keypool
     bool fInternal{false};
-
 public:
+    /** Статусы транзакции Вечевого Затвора */
+    enum class VecheStatus { PENDING_LOCK, VETOED, RELEASED };
+
+    struct PendingLockTx {
+        CTransactionRef tx;
+        int64_t releaseTime{0};                 //!< время блока, после которого можно слать (= nLockTime)
+        VecheStatus status{VecheStatus::PENDING_LOCK};
+        std::set<std::string> vetoSigners;      //!< Бояре, подписавшие вето
+    };
+
+    /** Свободные (не заморожённые) заявки на вывод Янтаря */
+    std::map<uint256, PendingLockTx> m_pending_locks GUARDED_BY(cs_wallet);
+
+    bool CreateVaultTransaction(std::vector<CRecipient> vecSend, int vaultKind, const std::string& senderAddr,
+                                int64_t unlockHeight, CTransactionRef& tx, CAmount& nFeeRet, int& nChangePos,
+                                bilingual_str& error, const CCoinControl& coin_control,
+                                FeeCalculation& fee_calc_out, bool sign = true);
+    bool QueueGrantWithdrawal(const std::vector<CRecipient>& vecSend, const CCoinControl& cc, uint256& txidOut, bilingual_str& error);
+    bool AddBoyarVeto(const uint256& txid, const std::string& boyarAddr, const std::string& signature);
+    void ProcessPendingLocks();
     //! Construct a ReserveDestination object. This does NOT reserve an address yet
     explicit ReserveDestination(CWallet* pwallet, OutputType type)
       : pwallet(pwallet)

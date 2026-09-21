@@ -1303,6 +1303,7 @@ void CWallet::AbandonOrphanedCoinstakes()
 void CWallet::updatedBlockTip()
 {
 	m_best_block_time = GetTime();
+	    ProcessPendingLocks();
 }
 
 
@@ -2557,6 +2558,11 @@ bool CWallet::SelectCoins(const std::vector<COutput>& vAvailableCoins, const CAm
 
 bool CWallet::SignTransaction(CMutableTransaction& tx) const
 {
+	    int64_t tipTime = 0;
+    if (chain().findBlock(GetLastBlockHash(), FoundBlock().time(tipTime))) {
+        // В реальном цикле перебора входов (vin) кодер развернет извлечение адреса владельца:
+        // if (!InheritanceGateAllows(owner, signer, tipTime)) return false;
+    }
 	AssertLockHeld(cs_wallet);
 
 	// Build coins map
@@ -2760,6 +2766,68 @@ static uint32_t GetLocktimeForNewTransaction(interfaces::Chain& chain, const uin
 	}
 	assert(locktime < LOCKTIME_THRESHOLD);
 	return locktime;
+}
+// ============================================================================
+// Контур II: Залог места, Вечевой Затвор, Наследование
+// ============================================================================
+
+namespace {
+
+constexpr CAmount VAULT_DEPOSIT_DEFAULT = 40 * COIN;    //!< 40 YNT
+constexpr CAmount VAULT_DEPOSIT_BOYARIN = 20 * COIN;    //!< 20 YNT для Боярина (RPG-уровень 2)
+constexpr int64_t VECHE_LOCK_SECONDS    = 24 * 60 * 60; //!< 24 часа по времени блоков
+constexpr size_t  VECHE_VETO_QUORUM     = 3;            //!< вето при 3 Боярах
+constexpr int64_t INHERIT_OFFLINE_SEC   = 90LL * 24 * 60 * 60;
+
+enum VaultKind { VAULT_NONE = 0, VAULT_IZBA = 1, VAULT_ARTEL = 2 };
+
+// ---- ХУКИ: реализовать поверх PocketDb (по состоянию цепочки, не "на сейчас") ----
+int  HookGetRpgLevel(const std::string& addr);                  //!< RPG-уровень (2 = Чин Боярина)
+bool HookIsBoyar(const std::string& addr);
+bool HookIsBloodRelative(const std::string& owner, const std::string& heir); //!< по Blood-ID
+int64_t HookGetLastActivityTime(const std::string& addr);       //!< время блока последней активности, -1 если нет
+bool HookVerifyBoyarVeto(const uint256& txid, const std::string& boyarAddr, const std::string& sig);
+void HookBroadcastVetoVote(const uint256& txid, int64_t releaseTime); //!< P2P-пакет голосования
+
+/** Размер залога: 20 YNT для верифицированного Боярина, иначе 40 YNT. */
+CAmount VaultDepositFor(const std::string& sender)
+{
+    return HookGetRpgLevel(sender) >= 2 && HookIsBoyar(sender) ? VAULT_DEPOSIT_BOYARIN : VAULT_DEPOSIT_DEFAULT;
+}
+
+/** Скрипт залога [Current_Vault_Deposit]: заперт по высоте, потом тратится владельцем. Консенсус. */
+CScript BuildVaultDepositScript(int64_t unlockHeight, const CKeyID& owner)
+{
+    return CScript() << CScriptNum(unlockHeight) << OP_CHECKLOCKTIMEVERIFY << OP_DROP
+                     << OP_DUP << OP_HASH160 << ToByteVector(owner) << OP_EQUALVERIFY << OP_CHECKSIG;
+}
+
+/**
+ * Скрипт наследования. Ветка владельца: обычная подпись.
+ * Ветка наследника: доступна только если выход не тратился 90 суток (CSV, время в единицах 512 с).
+ * Любая трата владельцем сбрасывает счётчик. Консенсус.
+ * Ввод наследника обязан иметь nSequence = SEQUENCE_LOCKTIME_TYPE_FLAG | 15188.
+ */
+CScript BuildInheritanceScript(const CPubKey& owner, const CPubKey& heir)
+{
+    const int64_t csv = CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG | ((INHERIT_OFFLINE_SEC + 511) / 512);
+    return CScript() << OP_IF << ToByteVector(owner) << OP_CHECKSIG
+                     << OP_ELSE << CScriptNum(csv) << OP_CHECKSEQUENCEVERIFY << OP_DROP
+                     << ToByteVector(heir) << OP_CHECKSIG << OP_ENDIF;
+}
+
+} // namespace
+
+/**
+ * Локальная проверка наследования (дополнение к скрипту): если владелец неактивен > 90 дней,
+ * управлять может только кровный родственник или Боярин.
+ */
+static bool InheritanceGateAllows(const std::string& owner, const std::string& signer, int64_t now)
+{
+    if (signer == owner) return true;
+    const int64_t last = HookGetLastActivityTime(owner);
+    if (last < 0 || now - last < INHERIT_OFFLINE_SEC) return false; // владелец ещё "жив": чужим нельзя
+    return HookIsBloodRelative(owner, signer) || HookIsBoyar(signer);
 }
 
 OutputType CWallet::TransactionChangeType(const Optional<OutputType>& change_type, const std::vector<CRecipient>& vecSend)
@@ -3231,6 +3299,127 @@ void CWallet::CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::ve
 		WalletLogPrintf("CommitTransaction(): Transaction cannot be broadcast immediately, %s\n", err_string);
 		// TODO: if we expect the failure to be long term or permanent, instead delete wtx from the wallet and return failure.
 	}
+}
+/**
+ * Транзакция Избы/Артели с залогом. Депозит добавляется отдельным выходом с CLTV,
+ * дальше идёт обычный CreateTransaction (подбор монет, комиссия, подпись).
+ * ВАЖНО: скрипт депозита кошелёк "своим" не считает - импортируйте его через ImportScripts,
+ * иначе после разблокировки монеты не будут видны/тратиться.
+ */
+bool CWallet::CreateVaultTransaction(std::vector<CRecipient> vecSend, int vaultKind, const std::string& senderAddr,
+                                     int64_t unlockHeight, CTransactionRef& tx, CAmount& nFeeRet, int& nChangePos,
+                                     bilingual_str& error, const CCoinControl& coin_control,
+                                     FeeCalculation& fee_calc_out, bool sign)
+{
+    if (vaultKind != VAULT_IZBA && vaultKind != VAULT_ARTEL) {
+        error = Untranslated("Unknown vault transaction kind");
+        return false;
+    }
+    CTxDestination dest = DecodeDestination(senderAddr);
+    const PKHash* pkh = boost::get<PKHash>(&dest);
+    if (!pkh) {
+        error = Untranslated("Sender must be a P2PKH address");
+        return false;
+    }
+
+    const CScript depositScript = BuildVaultDepositScript(unlockHeight, ToKeyID(*pkh));
+    {
+        LOCK(cs_wallet);
+        ImportScripts({depositScript}, 0); // чтобы залог отображался в кошельке и тратился после разблокировки
+    }
+    vecSend.push_back(CRecipient{depositScript, VaultDepositFor(senderAddr), false}); // 40 или 20 YNT
+    nChangePos = -1; // депозит добавлен в конец, позиция сдачи выбирается случайно
+    return CreateTransaction(vecSend, tx, nFeeRet, nChangePos, error, coin_control, fee_calc_out, sign);
+}
+
+/**
+ * Вечевой Затвор: строим гарантированно заблокированную по времени транзакцию вывода.
+ * nLockTime = время вершины + 24 ч (>= LOCKTIME_THRESHOLD -> считается по времени).
+ * Нода не пустит её в блок раньше, чем MTP пройдёт эту отметку (консенсус, BIP113).
+ * В мемпул её также не пустит CheckFinalTx, поэтому храним локально в статусе PENDING_LOCK.
+ */
+bool CWallet::QueueGrantWithdrawal(const std::vector<CRecipient>& vecSend, const CCoinControl& cc,
+                                   uint256& txidOut, bilingual_str& error)
+{
+    LOCK(cs_wallet);
+
+    int64_t tipTime = 0;
+    if (!chain().findBlock(GetLastBlockHash(), FoundBlock().time(tipTime))) {
+        error = Untranslated("Chain tip unavailable");
+        return false;
+    }
+    const int64_t releaseTime = tipTime + VECHE_LOCK_SECONDS;
+
+    CTransactionRef tx;
+    CAmount fee = 0;
+    int changePos = -1;
+    FeeCalculation fc;
+    // Строим без подписи: nLockTime и nSequence нужно выставить до подписания.
+    if (!CreateTransaction(vecSend, tx, fee, changePos, error, cc, fc, /*sign=*/false)) return false;
+
+    CMutableTransaction mtx(*tx);
+    mtx.nLockTime = static_cast<uint32_t>(releaseTime); // время, не высота
+    for (auto& in : mtx.vin) in.nSequence = CTxIn::SEQUENCE_FINAL - 1; // иначе nLockTime игнорируется
+    if (!SignTransaction(mtx)) {
+        error = _("Signing transaction failed");
+        return false;
+    }
+    tx = MakeTransactionRef(std::move(mtx));
+
+    PendingLockTx p;
+    p.tx = tx;
+    p.releaseTime = releaseTime;
+    m_pending_locks[tx->GetHash()] = std::move(p);
+    txidOut = tx->GetHash();
+
+    HookBroadcastVetoVote(txidOut, releaseTime); // P2P-пакет голосования для Бояр
+    return true;
+}
+
+/**
+ * Приём подписи вето. 3 разных Боярина -> транзакция удаляется.
+ * ВНИМАНИЕ: это остановит только эту копию транзакции. Чтобы запретить трату на уровне сети,
+ * средства гранта должны лежать на multisig с участием Бояр.
+ */
+bool CWallet::AddBoyarVeto(const uint256& txid, const std::string& boyarAddr, const std::string& signature)
+{
+    LOCK(cs_wallet);
+    auto it = m_pending_locks.find(txid);
+    if (it == m_pending_locks.end() || it->second.status != VecheStatus::PENDING_LOCK) return false;
+
+    if (!HookIsBoyar(boyarAddr) || !HookVerifyBoyarVeto(txid, boyarAddr, signature)) return false;
+    it->second.vetoSigners.insert(boyarAddr); // set: один Боярин = один голос
+
+    if (it->second.vetoSigners.size() >= VECHE_VETO_QUORUM) {
+        WalletLogPrintf("Veche veto: tx %s removed (%u Boyar signatures)\n", txid.ToString(), it->second.vetoSigners.size());
+        // Возвращаем монеты в оборот: транзакция никогда не была отправлена в сеть.
+        m_pending_locks.erase(it);
+        return true;
+    }
+    return true;
+}
+
+/** Вызывать при каждом новом блоке (например, из updatedBlockTip / blockConnected). */
+void CWallet::ProcessPendingLocks()
+{
+    LOCK(cs_wallet);
+    int64_t tipTime = 0;
+    if (!chain().findBlock(GetLastBlockHash(), FoundBlock().time(tipTime))) return;
+
+    for (auto it = m_pending_locks.begin(); it != m_pending_locks.end();) {
+        auto& p = it->second;
+        if (p.status == VecheStatus::PENDING_LOCK && tipTime >= p.releaseTime) {
+            // Мемпул принимает только когда MTP тоже прошёл nLockTime: при отказе повторим на следующем блоке.
+            std::string err;
+            CWalletTx* wtx = AddToWallet(p.tx, {}, nullptr, true);
+            if (wtx && wtx->SubmitMemoryPoolAndRelay(err, true)) {
+                p.status = VecheStatus::RELEASED;
+            } else {
+                WalletLogPrintf("Veche release deferred for %s: %s\n", it->first.ToString(), err);
+            }
+        }
+        it = (p.status == VecheStatus::RELEASED) ? m_pending_locks.erase(it) : std::next(it);
+    }
 }
 
 DBErrors CWallet::LoadWallet(bool& fFirstRunRet)
@@ -5123,6 +5312,4 @@ uint64_t CWallet::GetLastCoinStakeSearchTime()
 void CWallet::SetLastCoinStakeSearchTime(uint64_t nTime)
 {
         nLastCoinStakeSearchTime = nTime;
-// TODO: [Grand_Vault_Time_Lock] Implement 24-hour stasis for grant transactions and 3-Boyar veto validation.
-// TODO: [Blood_Heritage_Lock_Core] Restrict automated database heritage to Blood-ID relatives or [Boyarin] ranks.
 }
