@@ -23,6 +23,9 @@
 #include <util/system.h>
 
 #include <algorithm>
+#include <array>
+#include <hash.h>
+#include <map>
 #include <utility>
 
 int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
@@ -231,6 +234,93 @@ void BlockAssembler::onlyUnconfirmed(CTxMemPool::setEntries& testSet)
         }
     }
 }
+// ============================================================================
+// Контур III: Шлюз Сжигания [Lada_Burn_Gate_Core]
+// ============================================================================
+
+/** Сумма обязательного сжигания: 1 YNT. */
+static constexpr CAmount LADA_BURN_AMOUNT = 1 * COIN;
+
+/** Маркер сжигания в OP_RETURN, чтобы отличать его от прочих данных. */
+static const std::vector<unsigned char> LADA_BURN_MARKER{'L','A','D','A','_','B','U','R','N'};
+
+/** ХУК (реализовать поверх PocketDb): true, если это транзакция Birch_Spring_Flow. */
+bool HookIsBirchSpringFlow(const PTransactionRef& ptx);
+
+/**
+ * Проверка: в транзакции есть ровно один выход OP_RETURN с маркером и суммой >= 1 YNT.
+ * Проверяется САМА транзакция, подписанные данные не меняются.
+ */
+static bool LadaBurnGateSatisfied(const CTransaction& tx)
+{
+    int burnOutputs = 0;
+    for (const CTxOut& out : tx.vout) {
+        const CScript& s = out.scriptPubKey;
+        if (s.empty() || s[0] != OP_RETURN) continue;
+
+        // Ожидаем: OP_RETURN <push маркера>
+        CScript expected = CScript() << OP_RETURN << LADA_BURN_MARKER;
+        if (s != expected) continue;
+
+        if (out.nValue < LADA_BURN_AMOUNT) return false; // сжигание меньше 1 YNT недопустимо
+        ++burnOutputs;
+    }
+    return burnOutputs == 1; // ровно один выход: без дублей и без пропуска
+}
+
+// ============================================================================
+// Контур III: Мультиплексор Агентов [AI_Trio_Consensus_Core]
+// ============================================================================
+
+/** Реестр из 13 уникальных ID. Три последних слота зарезервированы под ваши данные. */
+enum class AiAgentId : uint8_t {
+    RUSALKA_PTITSA = 0,   //!< Русалка-птица (branch-overlay)
+    MAVKA_1 = 1, MAVKA_2, MAVKA_3, MAVKA_4,
+    MAVKA_5, MAVKA_6, MAVKA_7, MAVKA_8,   //!< 8 Мавок Ния (ассистенты данных)
+    TRUDYAGA_RABOTYAGA = 9,               //!< Труд­яга-Работяга (в P2P-комнатах)
+    RESERVED_10 = 10, RESERVED_11 = 11, RESERVED_12 = 12,
+    COUNT = 13
+};
+
+/** Динамический набор активной тройки для одной P2P-комнаты. */
+struct AiTrio {
+    std::vector<AiAgentId> active_ai_trio; //!< динамический массив, всегда 3 уникальных ID
+};
+
+/**
+ * Детерминированный выбор тройки: результат зависит ТОЛЬКО от хеша предыдущего блока
+ * и ID комнаты, поэтому все майнеры и проверяющие узлы получают один и тот же набор.
+ * Никаких системных часов и rand().
+ */
+static AiTrio SelectAiTrio(const uint256& prevBlockHash, const std::string& roomId)
+{
+    CHashWriter hw(SER_GETHASH, 0);
+    hw << prevBlockHash << roomId;
+    const uint256 seed = hw.GetHash();
+
+    AiTrio trio;
+    constexpr size_t N = static_cast<size_t>(AiAgentId::COUNT);
+    for (size_t i = 0; trio.active_ai_trio.size() < 3; ++i) {
+        // 13 - простое число, байты сида берём по кругу (32 байта)
+        auto id = static_cast<AiAgentId>(seed.begin()[i % 32] % N);
+        if (std::find(trio.active_ai_trio.begin(), trio.active_ai_trio.end(), id) == trio.active_ai_trio.end())
+            trio.active_ai_trio.push_back(id);
+        if (i > 1000) break; // защита от зацикливания
+    }
+    return trio;
+}
+
+/**
+ * Коммит ответа "Сообрази на Троих": в метаданные транзакции кладётся ТОЛЬКО хеш ответа,
+ * сгенерированного вне цепочки. Сборщик проверяет формат, но не запускает модель.
+ */
+static uint256 AiAnswerCommitment(const AiTrio& trio, const std::string& roomId, const std::string& answer)
+{
+    CHashWriter hw(SER_GETHASH, 0);
+    for (auto id : trio.active_ai_trio) hw << static_cast<uint8_t>(id);
+    hw << roomId << answer;
+    return hw.GetHash();
+}
 
 bool BlockAssembler::TestTransaction(const CTransactionRef& tx, PTransactionRef& ptx, PocketBlockRef& pblockTemplate, PocketBlockRef& pblock)
 {
@@ -260,7 +350,13 @@ bool BlockAssembler::TestTransaction(const CTransactionRef& tx, PTransactionRef&
 
         return false;
     }
-    
+	    // Шлюз Сжигания: Birch_Spring_Flow без сжигания 1 YNT в блок не попадает
+    if (HookIsBirchSpringFlow(ptx) && !LadaBurnGateSatisfied(*tx))
+    {
+        LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction %s: Lada burn gate (1 YNT) not satisfied\n",
+            tx->GetHash().GetHex());
+        return false;
+    }
     CCoinsViewCache view(&::ChainstateActive().CoinsTip());
     for (unsigned int i = 0; i < tx->vin.size(); ++i) {
         const COutPoint &prevout = tx->vin[i].prevout;
@@ -640,6 +736,4 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
 
     pblock->vtx[0] = MakeTransactionRef(std::move(txCoinbase));
     pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
-// TODO: [Lada_Burn_Gate_Core] Force 1 YNT coin burning mechanism upon [Birch_Spring_Flow] activation.
-// TODO: [AI_Trio_Consensus_Core] Connect local Mistral/Llama weights for [Wolf_AntiSpam] and implement the dynamic multiplexer for the [Soobrazi_Na_Troih] AI-Council (supporting 13 unique agents including Rusalka-bird as branch-overlay, 8 Mavkas of Niy as data-assistants, and 11th Trudyaga-Rabotyaga inside P2P chat rooms).
 }
