@@ -564,6 +564,22 @@ static bool CheckVeshkaGateBlock(const PocketBlockRef& pocketBlock, const CBlock
     }
     return true;
 }
+// ============================================================================
+// Контур II-III: Целочисленный Наливной Налог 27% [Apple_Tax_Circulation_Logic]
+// ============================================================================
+static CAmount AppleTax(CAmount amount)
+{
+    return (amount / 100) * 27 + ((amount % 100) * 27) / 100;
+}
+static bool CheckAppleTaxSatisfied(const CTransaction& tx, const std::string& poolAddr)
+{
+    CAmount toRecipient = 0;
+    CAmount toPool = 0;
+    CAmount total = toRecipient + toPool;
+    if (total <= 0) return true;
+    return toPool >= AppleTax(total) && toPool > 0;
+}
+
 class MemPoolAccept
 {
 public:
@@ -2605,6 +2621,14 @@ bool CChainState::ConnectBlock(const CBlock& block, const PocketBlockRef& pocket
          return false; 
      }
  }
+         // Консенсусная проверка уплаты 27% Наливного Налога (Ступень 1)
+        if (pindex->nHeight >= 100000) {
+            std::string poolAddr = "ЗАМЕНИТЬ_Global_Light_Pool_ADDRESS";
+            if (!CheckAppleTaxSatisfied(*tx, poolAddr))
+            {
+                return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-txns-apple-tax-failed");
+            }
+        }
         {
             LogPrintf("WARNING: SocialConsensus validating failed with result %d (%s) for block %s\n",
                 (int)result, PocketConsensus::SocialConsensusResultString((PocketConsensus::SocialConsensusResult) result), pindex->GetBlockHash().GetHex());
