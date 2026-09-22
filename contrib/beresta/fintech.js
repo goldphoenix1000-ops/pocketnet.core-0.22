@@ -27,8 +27,8 @@ const CFG = {
   rpcUrl: process.env.RPC_URL || 'http://127.0.0.1:37070',
   rpcUser: process.env.RPC_USER || '',
   rpcPass: process.env.RPC_PASS || '',
-  globalLightPool: 'ЗАМЕНИТЬ_Global_Light_Pool_ADDRESS', // системный адрес пула Росы
-  burnAddress: 'ЗАМЕНИТЬ_UNSPENDABLE_BURN_ADDRESS',       // нетратимый адрес сжигания
+  globalLightPool: 'pB1LightPoolSystemAddressGlobalXXXXX', // системный адрес пула Росы
+  burnAddress: 'pBurnAddressNodeGateUnspendableXXXXX',       // нетратимый адрес сжигания
   decimals: 8,
 };
 const UNIT = 10n ** BigInt(CFG.decimals);

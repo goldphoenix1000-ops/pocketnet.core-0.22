@@ -1,0 +1,44 @@
+version: '3.8'
+services:
+  beresta-core:
+    image: pocketnet/core:latest
+    container_name: beresta_core_node
+    restart: always
+    ports:
+      - "8027:8027"
+      - "8028:8028"
+    volumes:
+      - ./data:/root/.pocketcoin
+    command: -aiagents=1 -aimodeldir=/root/models -port=8027 -rpcport=8028 -rpcuser=BoyarinNodeUser -rpcpassword=BraveSvarogPass123
+
+  beresta-bridge:
+    image: node:18-alpine
+    container_name: telegram_p2p_bridge
+    restart: always
+    depends_on:
+      - beresta-core
+    volumes:
+      - ./contrib/beresta:/app
+    working_dir: /app
+    environment:
+      - TELEGRAM_BOT_TOKEN=ТВОЙ_ОФИЦИАЛЬНЫЙ_ТОКЕН_ИЗ_BOTFATHER
+      - RPC_URL=http://beresta-core:8028
+      - RPC_USER=BoyarinNodeUser
+      - RPC_PASS=BraveSvarogPass123
+      - ANCHOR_FROM_ADDRESS=pB1AnchorMainNodeCommissionAddressXX
+    command: sh -c "npm install node-fetch telegraf && node bridge.js"
+
+  ai-wolf-inference:
+    image: ghcr.io/ggerganov/llama.cpp:full-cuda
+    container_name: ai_wolf_antispam_engine
+    restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./models:/root/models
+    command: --model /root/models/mistral-7b-q4_k_m.gguf --ctx-size 2048 --threads 4

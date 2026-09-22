@@ -35,7 +35,13 @@ bool PrepareSlot(AiAgentSlot& slot, const std::string& name, const fs::path& dir
         LogPrintf("AI: %s: %s\n", name, slot.lastError);
         return false;
     }
-
+	    // Проверка SHA-256 водяного знака весов [AI_Deterministic_Con_Params]
+    std::string expectedHash = (name == "Серый Волк") ? "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" : "8f434346648f6b96df89d9e2ba99cf20ff44cf32fa364e43b17a12b4d4b143a5";
+    if (CalculateFileSHA256(slot.modelPath) != expectedHash) {
+        slot.lastError = "морок: файл весов подменен или поврежден!";
+        LogPrintf("AI: %s: %s\n", name, slot.lastError);
+        return false;
+    }
     if (freeVram < AiEngineConfig::MIN_VRAM_BYTES) {
         slot.lastError = "недостаточно VRAM";
         if (name == "Серый Волк") {
