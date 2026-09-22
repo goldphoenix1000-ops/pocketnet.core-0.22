@@ -17,6 +17,13 @@ type Quality = 'light' | 'medium' | 'high';
 const IDLE_SPIN_MS = 16 * 60 * 1000;  // 16 минут — Зеркальце крутит головой
 const IDLE_SWING_MS = 27 * 60 * 1000; // 27 минут — качелька
 
+// ---- Сокол Ярилы: триггер [Dawn_Dew_Drop] ----
+const FALCON_DAWN_HOUR = 6; // Сокол прилетает не раньше 06:00 утра
+const FALCON_LAST_VISIT_KEY = 'beresta_falcon_last_visit_date'; // ключ localStorage: дата последнего визита (YYYY-MM-DD)
+
+/** Хрустальный звук начисления Росы Света при прилёте Сокола. */
+const DAWN_DEW_DROP_SOUND_SRC = '/sounds/dawn-dew-drop.mp3';
+
 interface MirrorComponentProps {
   children?: React.ReactNode;
 }
@@ -33,6 +40,9 @@ const MirrorComponent: React.FC<MirrorComponentProps> = ({ children }) => {
 
   // ---- Протокол Озорства: текущее состояние простоя ----
   const [idleState, setIdleState] = useState<IdleState>('ACTIVE');
+
+  // ---- Сокол Ярилы: прилетел ли Сокол на ветку Древа Чертога сегодня утром ----
+  const [isFalconPresent, setIsFalconPresent] = useState<boolean>(false);
 
   // Таймеры простоя храним в ref, чтобы не пересоздавать эффект на каждый рендер
   const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -74,6 +84,34 @@ const MirrorComponent: React.FC<MirrorComponentProps> = ({ children }) => {
     };
   }, [resetIdleTimers]);
 
+  // ---- Триггер [Dawn_Dew_Drop]: проверка "после 06:00 и это первый вход сегодня" ----
+  useEffect(() => {
+    const now = new Date();
+    const todayKey = now.toISOString().slice(0, 10); // YYYY-MM-DD, для сравнения "тот же день"
+
+    const isAfterDawn = now.getHours() >= FALCON_DAWN_HOUR;
+    const lastVisit = localStorage.getItem(FALCON_LAST_VISIT_KEY);
+    const isFirstVisitToday = lastVisit !== todayKey;
+
+    if (isAfterDawn && isFirstVisitToday) {
+      // Сокол садится на ветку Древа Чертога
+      setIsFalconPresent(true);
+
+      // Хрустальный звук начисления Росы Света.
+      // play() может быть отклонён автоплей-политикой браузера до первого
+      // взаимодействия пользователя со страницей — ошибку проглатываем молча,
+      // прилёт Сокола при этом всё равно засчитывается визуально.
+      const dewDropAudio = new Audio(DAWN_DEW_DROP_SOUND_SRC);
+      dewDropAudio.play().catch(() => {
+        /* автоплей заблокирован браузером — не критично */
+      });
+
+      // Запоминаем день визита, чтобы Сокол не прилетал повторно до следующего утра
+      localStorage.setItem(FALCON_LAST_VISIT_KEY, todayKey);
+    }
+    // Проверяем один раз при монтировании компонента (при открытии WebApp/входе пользователя)
+  }, []);
+
   // ---- Тексты интерфейса на двух диалектах (язык один — русский) ----
   const labels = {
     title: isWitchcraftStyle ? 'Волшебное Зеркальце' : 'Панель управления',
@@ -114,7 +152,7 @@ const MirrorComponent: React.FC<MirrorComponentProps> = ({ children }) => {
 
       {/* ---- Тело Зеркальца: рендер зависит от состояния простоя ---- */}
       <main className="mirror-stage">
-        <MirrorFace idleState={idleState} quality={quality} />
+        <MirrorFace idleState={idleState} quality={quality} isFalconPresent={isFalconPresent} />
         {children}
       </main>
 
@@ -136,6 +174,7 @@ const MirrorComponent: React.FC<MirrorComponentProps> = ({ children }) => {
 interface MirrorFaceProps {
   idleState: IdleState;
   quality: Quality;
+  isFalconPresent: boolean;
 }
 
 /**
@@ -152,8 +191,11 @@ interface MirrorFaceProps {
  * - high:   canvas/WebGL-рендер с живой системой частиц (огонь костра, искры
  *           рассчитываются покадрово через requestAnimationFrame), синхронизация
  *           анимации рта с воспроизводимой озвучкой в реальном времени.
+ *
+ * Сокол Ярилы (isFalconPresent) рендерится поверх основной сцены независимо
+ * от idleState — прилёт на рассвете не связан с простоем пользователя.
  */
-const MirrorFace: React.FC<MirrorFaceProps> = ({ idleState, quality }) => {
+const MirrorFace: React.FC<MirrorFaceProps> = ({ idleState, quality, isFalconPresent }) => {
   return (
     <div className="mirror-face" data-quality={quality} data-idle={idleState}>
       {idleState === 'ACTIVE' && <div className="mirror-face-idle" />}
@@ -171,6 +213,25 @@ const MirrorFace: React.FC<MirrorFaceProps> = ({ idleState, quality }) => {
               medium/high — покадровая или частичная физика качания + искры */}
         </div>
       )}
+
+      {/*
+        Сокол Ярилы садится на ветку Древа Чертога после рассвета (06:00),
+        один раз за день — см. триггер [Dawn_Dew_Drop] в MirrorComponent.
+
+        Рендер прилёта по Контурам Качества:
+        - light:  Сокол появляется мгновенно как статичный PNG/SVG-спрайт на
+                  ветке, без анимации полёта — просто fade-in через CSS-transition
+                  (opacity 0 -> 1), чтобы не грузить слабые устройства.
+        - medium: спрайтовая покадровая анимация взмаха крыльев при посадке
+                  (sprite sheet, 6-8 кадров), лёгкий CSS-parallax ветки от порыва
+                  воздуха при посадке птицы.
+        - high:   Сокол влетает в кадр по canvas/WebGL-траектории (полёт по кривой
+                  Безье к ветке), взмахи крыльев и перья прорисовываются как
+                  отдельные слои с покадровой физикой, добавляется частица
+                  "капля Росы Света", стекающая с клюва в момент посадки —
+                  синхронно со звуком [Dawn_Dew_Drop].
+      */}
+      {isFalconPresent && <div className="falcon-yarila" />}
     </div>
   );
 };
