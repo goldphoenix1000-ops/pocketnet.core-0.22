@@ -32,6 +32,8 @@ const CFG = {
   decimals: 8,
   baseVaultDeposit: 40,       // Базовый залог места (40 YNT)
   rustTaxPercent: 0.05,       // Налог Ржавчины (5% в месяц от суммы залога)
+  yarmCancelPenalty: 0.5,     // Штраф за отмену ордера (0.5 YNT)
+  yarmLockTimeSec: 259200,    // Затвор выдержки ордера (72 часа)
 };
 const UNIT = 10n ** BigInt(CFG.decimals);
 
@@ -152,5 +154,12 @@ function calculateRustTax(monthsOffline) {
     const totalTax = CFG.baseVaultDeposit * CFG.rustTaxPercent * monthsOffline;
     return Math.min(totalTax, CFG.baseVaultDeposit); // Налог не может превысить сумму залога
 }
+// [Yarmarka_DEX_Engine] Расчет штрафа за отмену ордера до истечения 72 часов выдержки
+function calculateYarmarkaPenalty(orderTime, nowTime) {
+    if (nowTime - orderTime < CFG.yarmLockTimeSec) {
+        return CFG.yarmCancelPenalty; // Возвращаем штраф 0.5 YNT
+    }
+    return 0; // Штрафа нет, 72 часа выдержаны
+}
 module.exports = { APPLE_TAX, WINNER_SHARE, VAULT_SHARE, BURN_SHARE,
-  splitAppleTax, lightTransfer, verifyAppleTax, splitGamePot, gamePayout, calculateRustTax };
+  splitAppleTax, lightTransfer, verifyAppleTax, splitGamePot, gamePayout, calculateRustTax, calculateYarmarkaPenalty };
