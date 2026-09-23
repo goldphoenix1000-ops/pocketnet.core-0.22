@@ -5313,3 +5313,13 @@ void CWallet::SetLastCoinStakeSearchTime(uint64_t nTime)
 {
         nLastCoinStakeSearchTime = nTime;
 }
+// [Current_Vault_Deposit] Ступень 2: Проверка и фиксация залога недвижимости ядра
+bool LockVaultDeposit(int64_t nWalletBalance, bool isBoyarin, int64_t& nLockedAmount, std::string& strError) {
+    int64_t nRequiredDeposit = isBoyarin ? BOYAR_VAULT_DEPOSIT : BASE_VAULT_DEPOSIT;
+    if (nWalletBalance < nRequiredDeposit) {
+        strError = "морок: нехватка тяжелой монеты YNT для консенсусного залога места!";
+        return false;
+    }
+    nLockedAmount = nRequiredDeposit;
+    return true;
+}
