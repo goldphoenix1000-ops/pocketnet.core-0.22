@@ -30,6 +30,8 @@ const CFG = {
   globalLightPool: 'pB1LightPoolSystemAddressGlobalXXXXX', // системный адрес пула Росы
   burnAddress: 'pBurnAddressNodeGateUnspendableXXXXX',       // нетратимый адрес сжигания
   decimals: 8,
+  baseVaultDeposit: 40,       // Базовый залог места (40 YNT)
+  rustTaxPercent: 0.05,       // Налог Ржавчины (5% в месяц от суммы залога)
 };
 const UNIT = 10n ** BigInt(CFG.decimals);
 
@@ -144,6 +146,11 @@ async function gamePayout(winnerAddr, potStr, vaultAddr) {
   if (!signed.complete) throw new Error('Транзакция не подписана полностью');
   return rpc('sendrawtransaction', [signed.hex]);
 }
-
+// [YNT_Deflation_Engine] Расчет Налога Ржавчины при пассивном офлайне недвижимости
+function calculateRustTax(monthsOffline) {
+    if (monthsOffline <= 0) return 0;
+    const totalTax = CFG.baseVaultDeposit * CFG.rustTaxPercent * monthsOffline;
+    return Math.min(totalTax, CFG.baseVaultDeposit); // Налог не может превысить сумму залога
+}
 module.exports = { APPLE_TAX, WINNER_SHARE, VAULT_SHARE, BURN_SHARE,
-  splitAppleTax, lightTransfer, verifyAppleTax, splitGamePot, gamePayout };
+  splitAppleTax, lightTransfer, verifyAppleTax, splitGamePot, gamePayout, calculateRustTax };
