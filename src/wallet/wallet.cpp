@@ -5323,3 +5323,13 @@ bool LockVaultDeposit(int64_t nWalletBalance, bool isBoyarin, int64_t& nLockedAm
     nLockedAmount = nRequiredDeposit;
     return true;
 }
+// [Yarmarka_DEX_Engine] Ступень 2: Расчет штрафа за отмену ордера до истечения 72 часов
+bool CalculateOrderCancelPenalty(int64_t nOrderTime, int64_t nNowTime, int64_t& nPenaltyAmount) {
+    if (nNowTime - nOrderTime < YARM_LOCK_TIME_SEC) {
+        nPenaltyAmount = YARM_CANCEL_PENALTY; // Списание штрафа 0.5 YNT
+        return true; // Штраф наложен
+    }
+    nPenaltyAmount = 0;
+    return false; // Штрафа нет, 72 часа выдержаны
+}
+
