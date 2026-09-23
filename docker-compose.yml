@@ -26,7 +26,7 @@ services:
       - RPC_USER=BoyarinNodeUser
       - RPC_PASS=BraveSvarogPass123
       - ANCHOR_FROM_ADDRESS=pB1AnchorMainNodeCommissionAddressXX
-    command: sh -c "npm install node-fetch telegraf && node bridge.js"
+    command: sh -c "npm install node-fetch telegraf ts-node typescript @types/node && npx ts-node bridge.ts"
 
   ai-wolf-inference:
     image: ghcr.io/ggerganov/llama.cpp:full-cuda
