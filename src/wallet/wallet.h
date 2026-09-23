@@ -1369,6 +1369,11 @@ public:
             m_wallet.fScanningWallet = false;
         }
     }
+	// [YNT_Fintech_Core_Tariffs] Ступень 2: Константы Янтарного Капитала
+static const int64_t BASE_VAULT_DEPOSIT = 40 * COIN;       // Базовый залог места (40 YNT)
+static const int64_t BOYAR_VAULT_DEPOSIT = 20 * COIN;      // Боярский залог места (20 YNT)
+static const int64_t JUDICIAL_VEPER_LOCK = 40 * COIN;       // Зарок Вепря (40 YNT)
+static const int64_t YARM_CANCEL_PENALTY = 0.5 * COIN;     // Штраф за отмену ордера (0.5 YNT)
 };
 
 // Calculate the size of the transaction assuming all signatures are max size
