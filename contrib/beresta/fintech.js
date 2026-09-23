@@ -161,5 +161,13 @@ function calculateYarmarkaPenalty(orderTime, nowTime) {
     }
     return 0; // Штрафа нет, 72 часа выдержаны
 }
+// [Yarmarka_DEX_Engine] Верификация отмены ордера: накладывает штраф, если 72 часа не выдержаны
+function verifyOrderCancellation(orderTime, nowTime, userBalance) {
+    const penalty = calculateYarmarkaPenalty(orderTime, nowTime);
+    if (penalty > 0 && userBalance < penalty) {
+        return { allowed: false, reason: "морок: нехватка тяжелой монеты YNT для оплаты штрафа ранней отмены ордера!" };
+    }
+    return { allowed: true, penaltyAmount: penalty };
+}
 module.exports = { APPLE_TAX, WINNER_SHARE, VAULT_SHARE, BURN_SHARE,
-  splitAppleTax, lightTransfer, verifyAppleTax, splitGamePot, gamePayout, calculateRustTax, calculateYarmarkaPenalty };
+  splitAppleTax, lightTransfer, verifyAppleTax, splitGamePot, gamePayout, calculateRustTax, calculateYarmarkaPenalty, verifyOrderCancellation };
