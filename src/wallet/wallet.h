@@ -1374,6 +1374,15 @@ static const int64_t BASE_VAULT_DEPOSIT = 40 * COIN;       // Базовый з�
 static const int64_t BOYAR_VAULT_DEPOSIT = 20 * COIN;      // Боярский залог места (20 YNT)
 static const int64_t JUDICIAL_VEPER_LOCK = 40 * COIN;       // Зарок Вепря (40 YNT)
 static const int64_t YARM_CANCEL_PENALTY = 0.5 * COIN;     // Штраф за отмену ордера (0.5 YNT)
+static const int64_t YARM_LOCK_TIME_SEC = 259200;           // Затвор выдержки ордера (72 часа в секундах)
+
+// [Yarmarka_DEX_Engine] Ступень 2: Структура P2P-ордера Глобальной Ярмарки
+struct YarmarkaOrder {
+    uint256 txid;             // Хэш raw-транзакции ордера в сети
+    int64_t nAmountYNT;       // Объем тяжелой монеты Янтаря на бартер
+    int64_t nPriceInLight;    // Цена в Лучиках Света
+    int64_t nOrderTime;       // Время запекания ордера в блокчейн
+    std::string strOwnerID;   // Публичный Ключ-Исток Боярина-эмитента
 };
 
 // Calculate the size of the transaction assuming all signatures are max size
