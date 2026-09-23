@@ -5332,4 +5332,15 @@ bool CalculateOrderCancelPenalty(int64_t nOrderTime, int64_t nNowTime, int64_t& 
     nPenaltyAmount = 0;
     return false; // Штрафа нет, 72 часа выдержаны
 }
+// [Yarmarka_DEX_Engine] Ступень 2: Упаковка параметров ордера Ярмарки в HEX-поток для OP_RETURN
+std::string PackYarmarkaOrder(const YarmarkaOrder& order) {
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << order.nAmountYNT;
+    ss << order.nPriceInLight;
+    ss << order.nOrderTime;
+    ss << order.strOwnerID;
+    
+    return HexStr(ss.begin(), ss.end()); // Возвращаем чистый HEX-текст полезной нагрузки
+}
+
 
