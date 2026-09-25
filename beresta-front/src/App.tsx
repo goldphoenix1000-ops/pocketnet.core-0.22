@@ -1,8 +1,8 @@
 import React from 'react';
-import GenesisFirstContact from './GenesisFirstContact';
+import MirrorGlobalContainer from './MirrorGlobalContainer';
 
 function App() {
-  return <GenesisFirstContact />;
+  return <MirrorGlobalContainer />;
 }
 
 export default App;
