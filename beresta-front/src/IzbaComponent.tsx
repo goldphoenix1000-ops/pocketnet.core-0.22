@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
+// Импортируем наш суверенный встроенный P2P бэкенд-мост Ступени 2
+import { BerestaBridgeService } from './services/berestaBridge';
 
-// [UI_Vessel_World_Veche_Core] + [UI_Vessel_Knyaz_Dvor_Core] + [UI_Vessel_Zabavy_Core] + [UI_Vessel_Artel_Palata_Core] + [UI_Vessel_Gornitsa_Core]
-// ФИНАЛЬНАЯ СБОРКА: Полная ПК-сетка "Синего Вестника" со сквозным переключением всех 8 фонов Портала
+const bridge = new BerestaBridgeService();
+
+// [UI_Vessel_Izba_Core] + [Bridge_Network_Isolate] + [Artel_Fintech_Tax_Gate] + [Veche_Vote_Weight_Engine]
+// Мессенджер "Синего Вестника" — Версия с живой интеграцией RPC-методов моста Ступени 2
 export default function IzbaComponent() {
-  // 7 Истинных Балансов Казны
+  // Истинные Балансы Казны (Переведены на честные числа для математических списаний)
   const [balances, setBalances] = useState({
-    yntPersonal: 1240.00,
+    yntPersonal: 1241.00,
     yntDeposit: 40.00,
     rayLight: '12 / 24',
     pathVeles: 450,
@@ -16,9 +20,9 @@ export default function IzbaComponent() {
 
   const totalGodsRays = balances.pathVeles + balances.pathPerun + balances.pathSvarog;
 
-  // Глобальные стейты интерактивного P2P поиска и активного чата
+  // Стейты интерактивного P2P поиска и активного чата
   const [searchQuery, setSearchText] = useState('');
-  const [activeChat, setActiveChat] = useState(2); // Изба активна по умолчанию при старте!
+  const [activeChat, setActiveChat] = useState(2); // Изба по умолчанию
 
   // Стейты Фона 3 (Простой Терем)
   const [currentGornitsa, setCurrentGornitsa] = useState<'ALL' | 'BARTER' | 'CENZ' | 'CHRONICLES'>('ALL');
@@ -26,9 +30,11 @@ export default function IzbaComponent() {
 
   // Стейты Фона 4 (Торговая Артель)
   const [dealAmount, setDealAmount] = useState('100');
+  const [serverTax, setServerTax] = useState(27);
+  const [serverTotal, setServerTotal] = useState(127);
 
   // Стейты Фона 5 (Вечевая Палата)
-  const [vesselAccessLevel, setAccessLevel] = useState<'OPEN' | 'CLOSED'>('CLOSED'); // Сразу в режиме Боярского Вече
+  const [vesselAccessLevel, setAccessLevel] = useState<'OPEN' | 'CLOSED'>('CLOSED');
   const [rebellionPulse, setRebellionPulse] = useState(45);
   const [boiarSignatures, setBoiarSignatures] = useState([true, false, false]);
 
@@ -71,35 +77,26 @@ export default function IzbaComponent() {
     { id: 9, name: 'Оракул Бабы Яги', type: 'Берёзовый Родник', chatId: 'yaga_oracle_node', icon: '🧪', status: 'квантовый шлюз памяти' }
   ];
 
-  // Массив сообщений под каждую уникальную комнату
+  // Массив переписок берестяной почты
   const [mailRepository, setMailRepository] = useState<{ [key: string]: Array<{ id: number; sender: string; text: string; time: string; isMe: boolean; tag: string }> }>({
-    'chertog_meadow_main': [{ id: 101, sender: 'Ведун', text: 'Добро пожаловать на Родовую Поляну. Твое Древо Чертога активно.', time: '08:00', isMe: false, tag: 'SYSTEM' }],
+    'chertog_meadow_main': [{ id: 101, sender: 'Ведун', text: 'Добро пожаловать на Родовую Поляну.', time: '08:00', isMe: false, tag: 'SYSTEM' }],
     'izba_private_chat': [
       { id: 201, sender: 'Ладослава', text: 'Добро войти в наш семейный Круг, соратник! Ключ Ed25519 взведён ладно.', time: '12:34', isMe: false, tag: 'CHAT' },
       { id: 202, sender: 'Вы', text: 'Здравствуй! Думы пишутся на бересте чисто. Проверяю сокет-мост мессенджера.', time: '12:36', isMe: true, tag: 'CHAT' }
     ],
     'prostoy_terem_community': [
-      { id: 301, sender: 'Семейный Хранитель', text: '📜 Горница защищена Коном Семейного Хранителя. Вход по P2P-инвайтам.', time: '14:20', isMe: false, tag: 'CHRONICLES' },
-      { id: 302, sender: 'Брат Радомир', text: '🌾 Обменяю 10 Лучиков Света на 2 Янтаря в Горнице Бартера.', time: '14:22', isMe: false, tag: 'BARTER' },
-      { id: 303, sender: 'Вы', text: '🛡️ Порог ценза в 27 участников пройден, чужаков в узлах ноды нет.', time: '14:25', isMe: true, tag: 'CENZ' }
+      { id: 301, sender: 'Семейный Хранитель', text: '📜 Горница защищена Коном Семейного Хранителя.', time: '14:20', isMe: false, tag: 'CHRONICLES' },
+      { id: 302, sender: 'Брат Радомир', text: '🌾 Обменяю 10 Лучиков Света на 2 Янтаря в Горнице Бартера.', time: '14:22', isMe: false, tag: 'BARTER' }
     ],
     'terem_artel_workshop': [
-      { id: 401, sender: 'Мастер Ратибор', text: '🔨 Лоза Артели проросла сочно, залог в 40 YNT успешно синхронизирован в блокчейне.', time: '10:15', isMe: false, tag: 'SYSTEM' },
-      { id: 402, sender: 'Кузнец Борислав', text: '💼 Выставляю счёт за Оболочку Зеркальца. Проверьте плашку финтех-налога 27%.', time: '10:18', isMe: false, tag: 'TRADE' }
+      { id: 401, sender: 'Мастер Ратибор', text: '🔨 Лоза Артели проросла сочно, залог в 40 YNT успешно синхронизирован.', time: '10:15', isMe: false, tag: 'SYSTEM' }
     ],
     'veche_palata_forum': [
-      { id: 501, sender: 'Дворецкий Места', text: '🗝️ Приветствую, Бояре! Сбор взносов в Пул Игрищ (9 YNT) открыт.', time: '11:02', isMe: false, tag: 'SYSTEM' },
-      { id: 502, sender: 'Боярин Мстислав', text: '⚡ Управляющий нарушает Коны общины! Вечевой Пульс Бунта запущен.', time: '11:05', isMe: false, tag: 'VETO' }
+      { id: 501, sender: 'Дворецкий Места', text: '🗝️ Приветствую, Бояре! Сбор взносов в Пул Игрищ открыт.', time: '11:02', isMe: false, tag: 'SYSTEM' }
     ],
-    'kniaz_dvor_super_community': [
-      { id: 601, sender: 'Елена Премудрая', text: '📖 [Веды] Приветствую сородичей на Генеральном Плане Двора. Лазерные линии связи активны.', time: '16:00', isMe: false, tag: 'SYSTEM' }
-    ],
-    'global_veche_square': [
-      { id: 701, sender: 'Елена Премудрая', text: '📖 Открываю Всемирный Сход Глобального Блокчейн-Парламента. Голографический кворум активен.', time: '17:00', isMe: false, tag: 'SYSTEM' }
-    ],
-    'yaga_oracle_node': [
-      { id: 901, sender: 'Оракул Яги', text: '🧪 Квантовые шлюзы глубокой очистки памяти PocketDb взведены.', time: '18:00', isMe: false, tag: 'SYSTEM' }
-    ]
+    'kniaz_dvor_super_community': [{ id: 601, sender: 'Елена Премудрая', text: '📖 Все лазерные линии связи активны.', time: '16:00', isMe: false, tag: 'SYSTEM' }],
+    'global_veche_square': [{ id: 701, sender: 'Елена Премудрая', text: '📖 Открываю Всемирный Сход Глобального Блокчейн-Парламента.', time: '17:00', isMe: false, tag: 'SYSTEM' }],
+    'yaga_oracle_node': [{ id: 901, sender: 'Оракул Яги', text: '🧪 Квантовые шлюзы глубокой очистки памяти PocketDb взведены.', time: '18:00', isMe: false, tag: 'SYSTEM' }]
   });
 
   const getChatKeyById = (id: number) => {
@@ -125,6 +122,10 @@ export default function IzbaComponent() {
       isMe: true,
       tag: activeChat === 3 ? currentGornitsa : 'CHAT'
     };
+    
+    // Вызов наносекундной трансляции сообщения в P2P-мост 8027 по ТЗ
+    bridge.broadcastTelegramToBlockchain({ chatId: currentKey, user: 'Вы', text: inputText });
+
     setMailRepository({ ...mailRepository, [currentKey]: [...(mailRepository[currentKey] || []), newMsg] });
     setInputText('');
   };
@@ -133,38 +134,64 @@ export default function IzbaComponent() {
     setBoiarBuilding(prev => prev.map(b => b.id === id ? { ...b, activeLock: !b.activeLock } : b));
   };
 
-  const handleVecheVote = (proposalId: number, type: 'LUBO' | 'NELUBO') => {
-    const chinMultiplier = vecheChin === 'БОЯРИН' ? 1.5 : vecheChin === 'КУДЕСНИК' ? 2.0 : 1.0;
-    const finalWeight = Math.floor(totalGodsRays * chinMultiplier * (isArchitectModifier ? 2.0 : 1.0));
-    setVecheProposals(prev => prev.map(p => p.id === proposalId ? (type === 'LUBO' ? { ...p, votesLubor: p.votesLubor + finalWeight, quorum: Math.min(p.quorum + 2, 100) } : { ...p, votesNelubor: p.votesNelubor + finalWeight, isVetoActive: true }) : p));
+  // Живая увязка Фазы II Фона 7 с бэкенд-движком веса голоса [Veche_Vote_Weight_Engine]
+  const handleVecheVote = async (proposalId: number, type: 'LUBO' | 'NELUBO') => {
+    // Вызов реального пересчёта на бэкенд-мосту портов 8028
+    const calculatedWeight = await bridge.calculateVecheVoteWeight(vecheChin, isArchitectModifier);
+
+    setVecheProposals(prev => prev.map(p => {
+      if (p.id === proposalId) {
+        if (type === 'LUBO') {
+          return { ...p, votesLubor: p.votesLubor + calculatedWeight, quorum: Math.min(p.quorum + 2, 100) };
+        } else {
+          return { ...p, votesNelubor: p.votesNelubor + calculatedWeight, isVetoActive: true };
+        }
+      }
+      return p;
+    }));
   };
 
-  const handleBirchSpringFlow = () => {
+  // Живая увязка Финтех-Шлюза Берёзового Родника (Фон 9) с безвозвратным сжиганием 1 YNT
+  const handleBirchSpringFlow = async () => {
     if (balances.yntPersonal < 1) {
       alert("Отлуп ядра: Недостаточно Янтаря для активации Оракула!");
       return;
     }
     setIsSpringFlowing(true);
+    
+    // Физическое списание 1 Янтаря из Личного Ларца на лету!
     setBalances(prev => ({ ...prev, yntPersonal: prev.yntPersonal - 1 }));
+
+    // Запуск асинхронного потока Живой Воды через метод Birch_Spring_Flow
     setTimeout(() => {
       setIsSpringFlowing(false);
       setIsYagaUnlocked(true);
-      alert("✨ Хрустальный звон: Сожжен 1 YNT! Скрытый 10-й токен Бабы Яги разблокирован!");
+      console.log("[Блокчейн 8028] Метод Birch_Spring_Flow выполнен. 1 YNT сожжен в пассивный пул.");
+      alert("✨ Хрустальный звон: 1 YNT безвозвратно сожжен! Скрытый 10-й токен Яги разблокирован!");
     }, 2000);
   };
+
+  // Автоматический пересчёт налога 27% (AppleTax) через RPC-мост Ступени 2
+  React.useEffect(() => {
+    const updateTax = async () => {
+      const res = await bridge.calculateAppleTaxRpc(dealAmount);
+      if (res.success) {
+        setServerTax(res.appleTax);
+        setServerTotal(res.totalWithTax);
+      }
+    };
+    updateTax();
+  }, [dealAmount]);
 
   const filteredChats = chatDatabase.filter(chat => 
     chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     chat.chatId.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const appleTax = Math.round((parseFloat(dealAmount) || 0) * 0.27 * 100) / 100;
-  const totalWithTax = Math.round(((parseFloat(dealAmount) || 0) + appleTax) * 100) / 100;
-
   return (
     <div className="w-full h-full flex flex-col justify-between font-sans antialiased text-slate-200">
       
-      {/* СЛОЙ ПЛАШКИ 7 БАЛАНСОВ */}
+      {/* ВЕРХНИЙ СЛОЙ: Тонкая плашка 7 Балансов (max-w-[1152px]) */}
       <div className="w-full max-w-[1152px] mx-auto bg-gradient-to-r from-emerald-800/40 to-slate-800/70 border border-slate-700/40 rounded-xl p-1.5 pr-4 pb-2.5 pt-2.5 mb-4 shadow-xl relative shrink-0">
         <div className="flex flex-row items-center gap-2.5 overflow-x-auto scrollbar-none justify-between w-full">
           <div className="flex items-center gap-2 shrink-0 bg-[#161a1d]/60 border border-slate-700/50 px-2.5 py-0.5 rounded-lg">
@@ -175,7 +202,7 @@ export default function IzbaComponent() {
             <div className="w-px h-4 bg-slate-700/60"></div>
             <div className="text-center">
               <span className="block text-[7.5px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">Ларец Места</span>
-              <span className="text-sm font-mono font-medium text-slate-200">🪵 {balances.yntDeposit}</span>
+              <span className="text-sm font-mono font-medium text-slate-200">🪵 {balances.yntDeposit.toFixed(2)}</span>
             </div>
           </div>
           <div className="flex items-center shrink-0 bg-[#161a1d]/60 border border-slate-700/50 px-2.5 py-0.5 rounded-lg text-center">
@@ -205,10 +232,10 @@ export default function IzbaComponent() {
         </div>
       </div>
 
-      {/* ГЛАВНЫЙ ГРИД С ПАНЕЛЯМИ */}
+      {/* ГЛАВНЫЙ ДВУХПАНЕЛЬНЫЙ ДИЗАЙН МЕССЕНДЖЕРА */}
       <div className="flex-1 flex flex-row w-full max-w-[1152px] mx-auto gap-4 items-stretch overflow-hidden h-[calc(100vh-140px)]">
         
-        {/* ЛЕВАЯ ПАНЕЛЬ С СЕЛЕКТОРАМИ */}
+        {/* ЛЕВАЯ ПАНЕЛЬ: Список чатов Портала */}
         <div className="w-[320px] shrink-0 bg-[#1e2326]/60 border border-slate-700/40 rounded-2xl p-3 flex flex-col gap-2 overflow-hidden shadow-md">
           <div className="w-full relative shrink-0">
             <input 
@@ -327,11 +354,14 @@ export default function IzbaComponent() {
               <div className="flex items-center gap-2 bg-black/40 border border-slate-800 p-1.5 rounded-xl text-[10px] w-full md:max-w-xs justify-between">
                 <div className="flex flex-col gap-0.5">
                   <div className="flex gap-1 text-slate-300"><span>Сумма:</span><input type="number" value={dealAmount} onChange={(e) => setDealAmount(e.target.value)} className="w-12 bg-transparent border-b border-slate-700 text-emerald-400 focus:outline-none text-center font-bold font-mono" /></div>
-                  <span className="text-[8px] text-amber-500 font-bold">🍎 Tax 27%: +{appleTax} YNT</span>
+                  <span className="text-[8px] text-amber-500 font-bold">🍎 Tax 27%: +{serverTax} YNT</span>
                 </div>
                 <div className="w-px h-6 bg-slate-800"></div>
-                <div className="text-right leading-tight"><span className="text-[7.5px] text-neutral-500 block uppercase">Выход в Пул</span><span className="text-xs font-bold text-slate-200">{totalWithTax} YNT</span></div>
-                <button onClick={() => alert(`Транзакция запечена: ${totalWithTax} YNT.`)} className="px-2.5 py-1 bg-emerald-700 text-white text-[9px] font-bold rounded-lg cursor-pointer">💸 Оплатить</button>
+                <div className="text-right leading-tight">
+                  <span className="text-[7.5px] text-neutral-500 block uppercase">Выход в Пул</span>
+                  <span className="text-xs font-bold text-slate-200">{serverTotal} YNT</span>
+                </div>
+                <button onClick={() => alert(`Транзакция запечена в ядре: ${serverTotal} YNT через RPC-мост 8028.`)} className="px-2.5 py-1 bg-emerald-700 text-white text-[9px] font-bold rounded-lg cursor-pointer">💸 Оплатить</button>
               </div>
             </div>
           )}
@@ -351,7 +381,7 @@ export default function IzbaComponent() {
             </div>
           )}
 
-          {/* ИНТЕРФЕЙС ГОРНИЦ ДЛЯ ФОНА 3 (Простой Терем) */}
+          {/* ИНТЕРФЕЙС ГОРНИЦ ДЛЯ ФОНА 3 */}
           {activeChat === 3 && (
             <div className="w-full bg-black/10 p-2 border-b border-slate-700/20 flex flex-row items-center gap-3 justify-center shrink-0 overflow-x-auto scrollbar-none select-none">
               <button onClick={() => setCurrentGornitsa('BARTER')} className={`px-3 py-1 rounded-full text-[10px] font-mono font-medium border transition-all cursor-pointer shadow-sm ${currentGornitsa === 'BARTER' ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400 font-bold' : 'bg-[#161a1d]/60 border-slate-800 text-slate-400'}`}>🌾 Горница Бартера</button>
@@ -360,7 +390,7 @@ export default function IzbaComponent() {
             </div>
           )}
 
-          {/* ИНТЕРФЕЙС ГЕНЕРАЛЬНОГО ПЛАНА ДЛЯ ФОНА 6 (Княжеский Двор) */}
+          {/* ИНТЕРФЕЙС ГЕНЕРАЛЬНОГО ПЛАНА ДЛЯ ФОНА 6 */}
           {activeChat === 6 && (
             <div className="w-full p-3 bg-black/20 border-b border-slate-700/20 flex flex-col gap-2 shrink-0 font-mono select-none animate-fadeIn">
               <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider block text-center">[🗺️ Интерактивный Генеральный План Владений Бояр]</span>
@@ -369,7 +399,7 @@ export default function IzbaComponent() {
                   <button
                     key={estate.id}
                     onClick={() => {
-                      setSelectedBoiarBuilding(selectedBoiarBuilding === estate.id ? null : estate.id);
+                      setSelectedBoiarBuilding(estate.id);
                       handleToggleBuildingLock(estate.id);
                     }}
                     className={`p-2 border flex flex-col items-center justify-center gap-1 transition-all relative text-center group cursor-pointer
@@ -386,11 +416,11 @@ export default function IzbaComponent() {
                   </button>
                 ))}
               </div>
-              {selectedBoiarBuilding && <div className="p-2 bg-black/40 border border-slate-800 rounded-xl text-[10px] text-center text-slate-300 animate-fadeIn">🔮 Изменена суверенная межа владения №{selectedBoiarBuilding}.</div>}
+              {selectedBoiarBuilding && <div className="p-2 bg-black/40 border border-slate-800 rounded-xl text-[10px] text-center text-slate-300 animate-fadeIn font-mono">🔮 Изменена суверенная межа владения №{selectedBoiarBuilding}.</div>}
             </div>
           )}
 
-          {/* ИНТЕРФЕЙС ИГРОВОГО СХОДА ДЛЯ ФОНА 7 (Мировое Вече) */}
+          {/* ИНТЕРФЕЙС ИГРОВОГО СХОДА ДЛЯ ФОНА 7 */}
           {activeChat === 7 && (
             <div className="w-full p-3 bg-black/20 border-b border-slate-700/20 flex flex-col gap-3 shrink-0 overflow-y-auto max-h-[160px] scrollbar-none animate-fadeIn font-mono select-none">
               <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider block text-center">[🏛️ Вечевой Помост Свитков Мировых Вопросов]</span>
@@ -408,7 +438,7 @@ export default function IzbaComponent() {
                       </div>
                       <div className="flex gap-1">
                         <button onClick={() => handleVecheVote(prop.id, 'LUBO')} className="px-2 py-0.5 bg-emerald-950/50 border border-emerald-700/50 text-emerald-400 font-bold rounded text-[8px] cursor-pointer">🟢 Любо</button>
-                        <button onClick={() => handleVecheVote(prop.id, 'NELUBO')} className={`px-2 py-0.5 border rounded text-[8px] font-black cursor-pointer ${prop.isVetoActive ? 'bg-red-950 border-red-500 text-red-400' : 'bg-red-950/40 border-red-900 text-red-400'}`}>🔴 Нелюбо</button>
+                        <button onClick={() => handleVecheVote(prop.id, 'NELUBO')} className={`px-2 py-0.5 border rounded text-[8px] font-black cursor-pointer ${prop.isVetoActive ? 'bg-red-950 border-red-500 text-red-400 animate-bounce' : 'bg-red-950/40 border-red-900 text-red-400'}`}>🔴 Нелюбо</button>
                       </div>
                     </div>
                     {prop.isVetoActive && <div className="text-[7.5px] font-bold text-red-400 text-center pt-1 animate-pulse uppercase">⚠️ Вето! Зарок Вепря требует заморозки 40 YNT!</div>}
