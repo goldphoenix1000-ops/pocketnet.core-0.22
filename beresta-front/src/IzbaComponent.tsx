@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-// Импортируем наш суверенный встроенный P2P бэкенд-мост Ступени 2
 import { BerestaBridgeService } from './services/berestaBridge';
 
 const bridge = new BerestaBridgeService();
 
-// [UI_Vessel_Izba_Core] + [Bridge_Network_Isolate] + [Artel_Fintech_Tax_Gate] + [Veche_Vote_Weight_Engine]
-// Мессенджер "Синего Вестника" — Версия с живой интеграцией RPC-методов моста Ступени 2
+// [UI_Vessel_Vyriy_Market_Core] + [UI_Vessel_Izba_Core] + [Artel_Fintech_Tax_Gate]
+// ПОЛНАЯ ИСПРАВЛЕННАЯ СБОРКА: Мессенджер "Синего Вестника" с возвращенным Фона 8 (Торговый Вырий)
 export default function IzbaComponent() {
-  // Истинные Балансы Казны (Переведены на честные числа для математических списаний)
+  // 7 Истинных Балансов Казны
   const [balances, setBalances] = useState({
     yntPersonal: 1241.00,
     yntDeposit: 40.00,
@@ -20,9 +19,8 @@ export default function IzbaComponent() {
 
   const totalGodsRays = balances.pathVeles + balances.pathPerun + balances.pathSvarog;
 
-  // Стейты интерактивного P2P поиска и активного чата
   const [searchQuery, setSearchText] = useState('');
-  const [activeChat, setActiveChat] = useState(2); // Изба по умолчанию
+  const [activeChat, setActiveChat] = useState(2); // Изба на старте
 
   // Стейты Фона 3 (Простой Терем)
   const [currentGornitsa, setCurrentGornitsa] = useState<'ALL' | 'BARTER' | 'CENZ' | 'CHRONICLES'>('ALL');
@@ -56,6 +54,12 @@ export default function IzbaComponent() {
     { id: 2, title: 'Распределение Общемирового Светового Котла в Пул Валидаторов', quorum: 42, votesLubor: 210, votesNelubor: 190, isVetoActive: false }
   ]);
 
+  // ================= ФОН 8: СУВЕРЕННЫЕ СТЕЙТЫ ТОРГОВОГО ВЫРИЯ =================
+  const [vyriyOrders, setVyriyOrders] = useState([
+    { id: 1, rate: '1 YNT = 5 Лучей', type: 'ПРОДАЖА', amount: '15 YNT', creator: 'Боярин Ипатий' },
+    { id: 2, rate: '1 YNT = 4.8 Луча', type: 'ПОКУПКА', amount: '40 YNT', creator: 'Купец Твердислав' }
+  ]);
+
   // Стейты Фона 9 (Оракул Бабы Яги)
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetStep, setResetStep] = useState<number>(0);
@@ -65,7 +69,7 @@ export default function IzbaComponent() {
 
   const [inputText, setInputText] = useState('');
 
-  // Валидированная Матрица 8 Фонов Портала по ТЗ
+  // ИСТИННАЯ ПОЛНАЯ МАТРИЦА 8 ФОНОВ (Фон 8 Торговый Вырий ВОЗВРАЩЕН В СТРОЙ!)
   const chatDatabase = [
     { id: 1, name: 'Родовая Поляна Чертога', type: 'Главный Экран', chatId: 'chertog_meadow_main', icon: '🌳', status: 'в сети' },
     { id: 2, name: 'Изба (Приватный чат)', type: 'Семейный Круг', chatId: 'izba_private_chat', icon: '🏡', status: 'в сети' },
@@ -74,28 +78,23 @@ export default function IzbaComponent() {
     { id: 5, name: 'Вечевая Палата', type: 'Локальный Форум', chatId: 'veche_palata_forum', icon: '🏛️', status: 'Бояре на помосте' },
     { id: 6, name: 'Княжеский Двор', type: 'Супер-Сообщество', chatId: 'kniaz_dvor_super_community', icon: '👑', status: 'лазерные межи портов' },
     { id: 7, name: 'Глобальное Вече Царства', type: 'Главная Площадь', chatId: 'global_veche_square', icon: '🔔', status: 'ситуационный крио-центр' },
+    { id: 8, name: 'Торговый Вырий', type: 'Глобальная Ярмарка', chatId: 'torgoviy_vyriy_market', icon: '💎', status: 'P2P-торги открыты' },
     { id: 9, name: 'Оракул Бабы Яги', type: 'Берёзовый Родник', chatId: 'yaga_oracle_node', icon: '🧪', status: 'квантовый шлюз памяти' }
   ];
 
   // Массив переписок берестяной почты
   const [mailRepository, setMailRepository] = useState<{ [key: string]: Array<{ id: number; sender: string; text: string; time: string; isMe: boolean; tag: string }> }>({
     'chertog_meadow_main': [{ id: 101, sender: 'Ведун', text: 'Добро пожаловать на Родовую Поляну.', time: '08:00', isMe: false, tag: 'SYSTEM' }],
-    'izba_private_chat': [
-      { id: 201, sender: 'Ладослава', text: 'Добро войти в наш семейный Круг, соратник! Ключ Ed25519 взведён ладно.', time: '12:34', isMe: false, tag: 'CHAT' },
-      { id: 202, sender: 'Вы', text: 'Здравствуй! Думы пишутся на бересте чисто. Проверяю сокет-мост мессенджера.', time: '12:36', isMe: true, tag: 'CHAT' }
-    ],
-    'prostoy_terem_community': [
-      { id: 301, sender: 'Семейный Хранитель', text: '📜 Горница защищена Коном Семейного Хранителя.', time: '14:20', isMe: false, tag: 'CHRONICLES' },
-      { id: 302, sender: 'Брат Радомир', text: '🌾 Обменяю 10 Лучиков Света на 2 Янтаря в Горнице Бартера.', time: '14:22', isMe: false, tag: 'BARTER' }
-    ],
-    'terem_artel_workshop': [
-      { id: 401, sender: 'Мастер Ратибор', text: '🔨 Лоза Артели проросла сочно, залог в 40 YNT успешно синхронизирован.', time: '10:15', isMe: false, tag: 'SYSTEM' }
-    ],
-    'veche_palata_forum': [
-      { id: 501, sender: 'Дворецкий Места', text: '🗝️ Приветствую, Бояре! Сбор взносов в Пул Игрищ открыт.', time: '11:02', isMe: false, tag: 'SYSTEM' }
-    ],
+    'izba_private_chat': [{ id: 201, sender: 'Ладослава', text: 'Добро войти в наш семейный Круг, соратник! Ключ Ed25519 взведён ладно.', time: '12:34', isMe: false, tag: 'CHAT' }],
+    'prostoy_terem_community': [{ id: 301, sender: 'Семейный Хранитель', text: '📜 Горница защищена Коном Семейного Хранителя.', time: '14:20', isMe: false, tag: 'CHRONICLES' }],
+    'terem_artel_workshop': [{ id: 401, sender: 'Мастер Ратибор', text: '🔨 Лоза Артели проросла сочно.', time: '10:15', isMe: false, tag: 'SYSTEM' }],
+    'veche_palata_forum': [{ id: 501, sender: 'Дворецкий Места', text: '🗝️ Сбор взносов в Пул Игрищ открыт.', time: '11:02', isMe: false, tag: 'SYSTEM' }],
     'kniaz_dvor_super_community': [{ id: 601, sender: 'Елена Премудрая', text: '📖 Все лазерные линии связи активны.', time: '16:00', isMe: false, tag: 'SYSTEM' }],
     'global_veche_square': [{ id: 701, sender: 'Елена Премудрая', text: '📖 Открываю Всемирный Сход Глобального Блокчейн-Парламента.', time: '17:00', isMe: false, tag: 'SYSTEM' }],
+    'torgoviy_vyriy_market': [
+      { id: 801, sender: 'Зодчий Вырия', text: '💎 [Ярмарка] P2P-стаканы ордеров синхронизированы. Налог общины APPLE_TAX учитывается автоматически.', time: '17:40', isMe: false, tag: 'MARKET' },
+      { id: 802, sender: 'Вы', text: 'Проверяю выставление суверенных ордеров на обмен Лучиков на Янтарь YNT.', time: '17:42', isMe: true, tag: 'MARKET' }
+    ],
     'yaga_oracle_node': [{ id: 901, sender: 'Оракул Яги', text: '🧪 Квантовые шлюзы глубокой очистки памяти PocketDb взведены.', time: '18:00', isMe: false, tag: 'SYSTEM' }]
   });
 
@@ -123,9 +122,7 @@ export default function IzbaComponent() {
       tag: activeChat === 3 ? currentGornitsa : 'CHAT'
     };
     
-    // Вызов наносекундной трансляции сообщения в P2P-мост 8027 по ТЗ
     bridge.broadcastTelegramToBlockchain({ chatId: currentKey, user: 'Вы', text: inputText });
-
     setMailRepository({ ...mailRepository, [currentKey]: [...(mailRepository[currentKey] || []), newMsg] });
     setInputText('');
   };
@@ -134,11 +131,8 @@ export default function IzbaComponent() {
     setBoiarBuilding(prev => prev.map(b => b.id === id ? { ...b, activeLock: !b.activeLock } : b));
   };
 
-  // Живая увязка Фазы II Фона 7 с бэкенд-движком веса голоса [Veche_Vote_Weight_Engine]
   const handleVecheVote = async (proposalId: number, type: 'LUBO' | 'NELUBO') => {
-    // Вызов реального пересчёта на бэкенд-мосту портов 8028
     const calculatedWeight = await bridge.calculateVecheVoteWeight(vecheChin, isArchitectModifier);
-
     setVecheProposals(prev => prev.map(p => {
       if (p.id === proposalId) {
         if (type === 'LUBO') {
@@ -151,27 +145,20 @@ export default function IzbaComponent() {
     }));
   };
 
-  // Живая увязка Финтех-Шлюза Берёзового Родника (Фон 9) с безвозвратным сжиганием 1 YNT
   const handleBirchSpringFlow = async () => {
     if (balances.yntPersonal < 1) {
       alert("Отлуп ядра: Недостаточно Янтаря для активации Оракула!");
       return;
     }
     setIsSpringFlowing(true);
-    
-    // Физическое списание 1 Янтаря из Личного Ларца на лету!
     setBalances(prev => ({ ...prev, yntPersonal: prev.yntPersonal - 1 }));
-
-    // Запуск асинхронного потока Живой Воды через метод Birch_Spring_Flow
     setTimeout(() => {
       setIsSpringFlowing(false);
       setIsYagaUnlocked(true);
-      console.log("[Блокчейн 8028] Метод Birch_Spring_Flow выполнен. 1 YNT сожжен в пассивный пул.");
       alert("✨ Хрустальный звон: 1 YNT безвозвратно сожжен! Скрытый 10-й токен Яги разблокирован!");
     }, 2000);
   };
 
-  // Автоматический пересчёт налога 27% (AppleTax) через RPC-мост Ступени 2
   React.useEffect(() => {
     const updateTax = async () => {
       const res = await bridge.calculateAppleTaxRpc(dealAmount);
@@ -235,7 +222,7 @@ export default function IzbaComponent() {
       {/* ГЛАВНЫЙ ДВУХПАНЕЛЬНЫЙ ДИЗАЙН МЕССЕНДЖЕРА */}
       <div className="flex-1 flex flex-row w-full max-w-[1152px] mx-auto gap-4 items-stretch overflow-hidden h-[calc(100vh-140px)]">
         
-        {/* ЛЕВАЯ ПАНЕЛЬ: Список чатов Портала */}
+        {/* ЛЕВАЯ ПАНЕЛЬ: Список чатов Портала с интерактивным поиском */}
         <div className="w-[320px] shrink-0 bg-[#1e2326]/60 border border-slate-700/40 rounded-2xl p-3 flex flex-col gap-2 overflow-hidden shadow-md">
           <div className="w-full relative shrink-0">
             <input 
@@ -248,7 +235,7 @@ export default function IzbaComponent() {
           </div>
 
           {activeChat === 3 && (
-            <button onClick={() => setCurrentGornitsa('ALL')} className={`w-full py-2 px-3 rounded-xl border font-mono font-bold text-center text-xs transition-all shrink-0 cursor-pointer ${currentGornitsa === 'ALL' ? 'bg-gradient-to-r from-amber-600/30 to-orange-600/30 border-amber-500/50 text-amber-400 shadow-inner' : 'bg-amber-950/20 border-amber-900/40 text-slate-400'}`}>📢 Вечевой Набат</button>
+            <button onClick={() => setCurrentGornitsa('ALL')} className="w-full py-2 px-3 rounded-xl border border-amber-900/40 bg-amber-950/20 text-slate-400 font-mono font-bold text-center text-xs transition-all shrink-0 cursor-pointer">📢 Вечевой Набат</button>
           )}
 
           {activeChat === 5 && (
@@ -313,6 +300,7 @@ export default function IzbaComponent() {
           ${activeChat === 7 ? 'bg-gradient-to-b from-[#0b101d] to-[#080a12] border-cyan-900/40' : 'bg-[#1e2326]/60'}
           ${activeChat === 5 && vesselAccessLevel === 'CLOSED' ? 'bg-[#221e1a]/80 border-amber-900/40' : ''}
           ${activeChat === 6 && isBlizzardActive ? 'bg-[#0f1522]/90 border-sky-800/40' : ''}
+          ${activeChat === 8 ? 'bg-gradient-to-b from-[#1c1810] to-[#0f0d09] border-amber-900/30' : ''}
           ${activeChat === 9 ? 'bg-gradient-to-b from-[#111116] to-[#07090d] border-emerald-900/30' : ''}`}>
           
           {activeChat === 6 && isBlizzardActive && (
@@ -339,6 +327,7 @@ export default function IzbaComponent() {
               {activeChat === 5 && <div className="text-xl animate-bounce" title="ИИ-Дворецкий Места 🕵️‍♂️">🕵️‍♂️</div>}
               {activeChat === 6 && <div className="text-xl animate-bounce" title="ИИ-Елена Премудрая 📖">📖</div>}
               {activeChat === 7 && <div className="flex gap-2"><div className="text-xl animate-pulse">📖</div><div className="text-xl animate-bounce">🕵️‍♂️</div></div>}
+              {activeChat === 8 && <div className="text-xl animate-pulse" title="ИИ-Зодчий Вырия 💎">💎</div>}
               {activeChat === 9 && <div className="text-xl animate-bounce" title="ИИ-Баба Яга 🧪">🧪</div>}
             </div>
 
@@ -441,7 +430,29 @@ export default function IzbaComponent() {
                         <button onClick={() => handleVecheVote(prop.id, 'NELUBO')} className={`px-2 py-0.5 border rounded text-[8px] font-black cursor-pointer ${prop.isVetoActive ? 'bg-red-950 border-red-500 text-red-400 animate-bounce' : 'bg-red-950/40 border-red-900 text-red-400'}`}>🔴 Нелюбо</button>
                       </div>
                     </div>
-                    {prop.isVetoActive && <div className="text-[7.5px] font-bold text-red-400 text-center pt-1 animate-pulse uppercase">⚠️ Вето! Зарок Вепря требует заморозки 40 YNT!</div>}
+                    {prop.isVetoActive && <div className="text-[7.5px] font-bold text-red-400 text-center pt-1 animate-pulse uppercase">⚠️ Вето Зарока Вепря! Требуется P2P-заморозка 40 YNT!</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ИНТЕРФЕЙС ИГРОВОГО СХОДА ДЛЯ ФОНА 8 (ТОРГОВЫЙ ВЫРИЙ) */}
+          {activeChat === 8 && (
+            <div className="w-full p-3 bg-black/20 border-b border-slate-700/20 flex flex-col gap-2 shrink-0 font-mono select-none animate-fadeIn">
+              <span className="text-[8px] font-bold text-amber-400 uppercase tracking-wider block text-center">[💎 P2P-Стаканы Суверенных Ордеров Ярмарки]</span>
+              <div className="space-y-1.5 w-full text-[10px]">
+                {vyriyOrders.map((order) => (
+                  <div key={order.id} className="flex justify-between items-center bg-black/40 border border-slate-850 p-2 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-1.5 py-0.5 text-[8px] font-bold rounded ${order.type === 'ПРОДАЖА' ? 'bg-red-950 text-red-400 border border-red-900/50' : 'bg-emerald-950 text-emerald-400 border border-emerald-900/50'}`}>{order.type}</span>
+                      <span className="text-slate-300 font-medium">{order.rate}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-200 block font-bold">{order.amount}</span>
+                      <span className="text-[8px] text-neutral-500 block">От: {order.creator}</span>
+                    </div>
+                    <button onClick={() => alert(`Запрос к Вырию отправлен. Сделка на ${order.amount} уходит в P2P-очередь.`)} className="px-2 py-1 bg-amber-700 text-white font-bold text-[8px] rounded transition-all active:scale-95 cursor-pointer shadow-sm">Обменять</button>
                   </div>
                 ))}
               </div>
