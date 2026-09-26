@@ -12,11 +12,14 @@ export default function MirrorGlobalContainer() {
   // Слой 3: Глобальный контекст диалекта и темы (true = Царство, false = Вестник)
   const [isWitchcraftStyle, setIsWitchcraftStyle] = useState(true);
   
+  // ГЛОБАЛЬНЫЙ СУВЕРЕННЫЙ СТЭЙТ ЧЕРТОГА: Теперь Зеркальце — главный провайдер Chertog_ID!
+  const [activeChertogId, setActiveChertogId] = useState(1);
+  
   // Тумблеры Быстрого Пульта (Пол-экрана)
   const [hideTooltips, setHideTooltips] = useState(false);
   const [mirrorQuality, setMirrorQuality] = useState<'light' | 'medium' | 'high'>('medium');
   
-  // Суверенное управление ИИ-Мавками (Включается пользователем лично!)
+  // Суверенное управление ИИ-Мавками
   const [mavkaGovorun, setMavkaGovorun] = useState(true);
   const [mavkaVeschun, setMavkaVeschun] = useState(false);
   const [mavkaBereginya, setMavkaBereginya] = useState(true);
@@ -26,21 +29,15 @@ export default function MirrorGlobalContainer() {
   const [eyeShieldPrivacy, setEyeShieldPrivacy] = useState(false);
   const [eyeShieldStasis, setEyeShieldStasis] = useState(false);
 
-  // Стейт приватности Свитка Славы (1 = Скрытый Клад, 2 = Родовая Гордость, 3 = Слава Вырия)
-  const [privacyState, setPrivacyState] = useState<number>(3);
-
-  // Механический селектор Берестяной Почты (1 = Полёт, 2 = Заслон, 3 = Затвор)
+  // Стейты Берестяной Почты и Легенд профиля
   const [falconMailMode, setFalconMailMode] = useState<number>(1);
-  
-  // Протокол Озорства [Mirror_Idle_Prank]
   const [idleTime, setIdleTime] = useState(0);
   const [prankStyle, setPrankStyle] = useState<'none' | 'rotate' | 'swing'>('none');
-  const globalClickRef = useRef<HTMLDivElement>(null);
+  const [activeLegend, setActiveLegend] = useState<string | null>(null);
 
-  // Ссылочные обереги авто-закрытия шторки
+  const globalClickRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [activeLegend, setActiveLegend] = useState<string | null>(null);
 
   // 7 Истинных Балансов Казны [UI_Mirror_Balances_Engine]
   const [balances] = useState({
@@ -55,9 +52,9 @@ export default function MirrorGlobalContainer() {
 
   const totalGodsRays = balances.pathVeles + balances.pathPerun + balances.pathSvarog;
 
-  // База данных Матрицы 9 Фонов по ТЗ (С чистыми ID и именами)
+  // База данных Матрицы 9 Фонов по ТЗ
   const chatDatabase: { [key: number]: { name: string; id: string; desc: string } } = {
-    1: { name: 'Родовая Поляна Чертога (Главный Экран)', id: 'chertog_meadow_main', desc: 'Суверенное пространство Странника, Древо, Костёр общения.' },
+    1: { name: 'Родовая Поляна Чертога (Главный Экран)', id: 'chertog_meadow_main', desc: 'Суверенное空间 Странника, Древо, Костёр общения.' },
     2: { name: 'Изба (Приватный чат)', id: 'izba_private_chat', desc: 'Уютная локация для семейного Круга. Лимит до 3 соратников.' },
     3: { name: 'Простой Терем (Камерное Сообщество)', id: 'prostoy_terem_community', desc: 'Закрытый чат для близкого круга. Лимит до 27 участников.' },
     4: { name: 'Терем-Артель (Рабочая Мастерская)', id: 'terem_artel_workshop', desc: 'Публичный/закрытый бизнес-канал вещания мастеров.' },
@@ -68,7 +65,27 @@ export default function MirrorGlobalContainer() {
     9: { name: 'Игрища Кудесников (Пул)', id: 'igrischa_kudesnik_pool', desc: 'Активная фаза Янтарного Краудфандинга и Вечевого Пульса.' }
   };
 
-  // Протокол Озорства (секунды для симуляции минут)
+  // Каноничная база данных 16 Чертогов
+  const chertogLORE = {
+    1: { name: 'Чертог Вепря', icon: '⚖️', tree: 'Груша Истока', god: 'Рамхатъ', code: 'Tree_ID_01' },
+    2: { name: 'Чертог Щуки', icon: '🤰', tree: 'Священная Слива', god: 'Рожана', code: 'Tree_ID_02' },
+    3: { name: 'Чертог Белого Лебедя', icon: '🧺', tree: 'Священная Берёза', god: 'Макошь', code: 'Tree_ID_03' },
+    4: { name: 'Чертог Змия', icon: '🔥', tree: 'Священная Липа', god: 'Семаргл', code: 'Tree_ID_04' },
+    5: { name: 'Чертог Варуны', icon: '📜', tree: 'Священная Лиственница', god: 'Коляда', code: 'Tree_ID_05' },
+    6: { name: 'Чертог Медведя', icon: '🦅', tree: 'Священный Букъ', god: 'Сварог', code: 'Tree_ID_06' },
+    7: { name: 'Чертог Бусла', icon: '🦊', tree: 'Священная Ивая', god: 'Род', code: 'Tree_ID_07' },
+    8: { name: 'Чертог Волка', icon: '🐉', tree: 'Священный Тополь', god: 'Велес', code: 'Tree_ID_08' },
+    9: { name: 'Чертог Лисы', icon: '🐍', tree: 'Священный Грабъ', god: 'Марена (Мара)', code: 'Tree_ID_09' },
+    10: { name: 'Чертог Тура', icon: '🦅', tree: 'Священная Осина', god: 'Крышень', code: 'Tree_ID_10' },
+    11: { name: 'Чертог Лося', icon: '🐬', tree: 'Священная Берёза', god: 'Лада', code: 'Tree_ID_11' },
+    12: { name: 'Чертог Финиста', icon: '🐎', tree: 'Священная Вишня', god: 'Вышень', code: 'Tree_ID_12' },
+    13: { name: 'Чертог Коня', icon: '🐕', tree: 'Священный Вяз', god: 'Купала', code: 'Tree_ID_13' },
+    14: { name: 'Чертог Орла', icon: '🐂', tree: 'Священный Дубъ', god: 'Перун', code: 'Tree_ID_14' },
+    15: { name: 'Чертог Раса', icon: '🏠', tree: 'Священный Ясень', god: 'Тархъ (Даждьбог)', code: 'Tree_ID_15' },
+    16: { name: 'Чертог Девы', icon: '🛕', tree: 'Священная Яблоня', god: 'Джива', code: 'Tree_ID_16' }
+  };
+
+  // Протокол Озорства
   useEffect(() => {
     const interval = setInterval(() => {
       if (mirrorState === 'TOKEN') {
@@ -83,7 +100,6 @@ export default function MirrorGlobalContainer() {
     return () => clearInterval(interval);
   }, [mirrorState]);
 
-  // Сброс озорства при касании
   const resetIdleTimer = () => {
     setIdleTime(0);
     setPrankStyle('none');
@@ -91,11 +107,8 @@ export default function MirrorGlobalContainer() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        settingsRef.current && !settingsRef.current.contains(event.target as Node) &&
-        buttonRef.current && !buttonRef.current.contains(event.target as Node)
-      ) {
-        setMirrorState('TOKEN'); // Возвращаем в токен при клике снаружи шторки
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node) && buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        setMirrorState('TOKEN');
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -109,25 +122,28 @@ export default function MirrorGlobalContainer() {
   };
 
   return (
-    <div 
-      ref={globalClickRef}
-      onClick={resetIdleTimer}
-      className={`min-h-screen relative w-full overflow-hidden transition-colors duration-500 ${isWitchcraftStyle ? 'bg-[#111315]' : 'bg-[#0f111a]'}`}
-    >
-      {/* СЛОЙ 0: Подложка — Активный игровой Фон */}
+    <div ref={globalClickRef} onClick={resetIdleTimer} className={`min-h-screen relative w-full overflow-hidden transition-colors duration-500 ${isWitchcraftStyle ? 'bg-[#111315]' : 'bg-[#0f111a]'}`}>
+      
+      {/* СЛОЙ 0: Динамическая подложка фонов */}
       <div className={`absolute inset-0 z-0 transition-all duration-300 ${eyeShieldText ? 'grayscale contrast-125' : ''}`}>
-        {currentBg === 1 ? <MeadowComponent /> : <IzbaComponent />}
+        {currentBg === 1 ? (
+          <MeadowComponent 
+            activeChertogId={activeChertogId} 
+            onChertogChange={setActiveChertogId} 
+            currentBackground={currentBg}
+          />
+        ) : (
+          <IzbaComponent />
+        )}
       </div>
 
-      {/* СЛОЙ 1: СКВОЗНОЙ ОВЕРЛЕЙ — Кристальный овальный токен Зеркальца выведен на ЖЁСТКИЙ z-50 приоритет! */}
+      {/* СЛОЙ 1: Токен Зеркальца в режиме ПОКОЯ (Исправлено условие на TOKEN!) */}
       {mirrorState === 'TOKEN' && (
         <button
           ref={buttonRef}
           onClick={handleTokenClick}
           className={`absolute top-4 right-4 z-50 w-12 h-12 rounded-full border transition-all duration-300 flex items-center justify-center shadow-2xl cursor-pointer
-            ${isWitchcraftStyle 
-              ? 'bg-[#1e2326]/95 border-emerald-500/40 text-emerald-400 shadow-emerald-950/40' 
-              : 'bg-[#10121d]/95 border-slate-700/50 text-cyan-400 shadow-slate-950/60'}
+            ${isWitchcraftStyle ? 'bg-[#1e2326]/95 border-emerald-500/40 text-emerald-400 shadow-emerald-950/40' : 'bg-[#10121d]/95 border-slate-700/50 text-cyan-400 shadow-slate-950/60'}
             ${prankStyle === 'rotate' ? 'animate-spin duration-[4000ms]' : ''}
             ${prankStyle === 'swing' ? 'animate-bounce' : ''}
           `}
@@ -137,7 +153,7 @@ export default function MirrorGlobalContainer() {
         </button>
       )}
 
-      {/* СЛОЙ 1: БЫСТРЫЙ ПУЛЬТ ОБЕРЕГА ВЗОРА (Стейт: ПОЛ-ЭКРАНА) — Выведен на ЖЁСТКИЙ z-50 приоритет! */}
+      {/* СЛОЙ 1: БЫСТРЫЙ ПУЛЬТ ОБЕРЕГА ВЗОРА (Стейт: ПОЛ-ЭКРАНА HALF) */}
       {mirrorState === 'HALF' && (
         <div 
           ref={settingsRef}
@@ -151,14 +167,13 @@ export default function MirrorGlobalContainer() {
             <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono">Свайп вверх — Летопись Рода</span>
           </div>
 
-          {/* Всплывающие укрупнённые подсказки Ведуна по знакам ❓ */}
           {!hideTooltips && (
             <div className="text-center bg-[#161a1d]/70 border border-slate-700/30 rounded-xl p-2 mx-auto max-w-sm text-[11px] text-slate-300 animate-fadeIn shadow-inner w-full mt-1.5">
-              💡 Переключайте режимы Вестника, активируйте ИИ-Мавок или управляйте вещами Инвентаря.
+              💡 Чертог {activeChertogId} ({chertogLORE[activeChertogId as keyof typeof chertogLORE].name}) соединён со Свитком Славы на лету.
             </div>
           )}
 
-                    {/* ПАНЕЛЬ ВЕСТНИКА: Панель Трёх Кнопок-Иконок Интеграции Telegram [Mirror_TG_Integration_Gate] */}
+          {/* Панель Вестника: Панель Трёх Кнопок-Иконок Интеграции Telegram [Mirror_TG_Integration_Gate] */}
           <div className="w-full max-w-md mx-auto bg-black/20 border border-slate-800/40 rounded-xl p-2 flex flex-col gap-1.5 mt-2">
             <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider text-center block">[Панель Вестника] — Шлюз TDLib</span>
             <div className="grid grid-cols-3 gap-2">
@@ -204,15 +219,13 @@ export default function MirrorGlobalContainer() {
             </div>
           </div>
 
-          {/* ИНТЕРФЕЙСНАЯ СЕТКА ИНВЕНТАРЯ */}
+          {/* ИНТЕРФЕЙСНАЯ СЕТКА ИНВЕНТАРЯ: 6 квадратных ячеек-токенов (44x44px) [UI_Mirror_Inventory_Specs] */}
           <div className="w-full bg-black/20 border border-slate-800/40 rounded-xl p-2 flex flex-col gap-2 mt-2">
-            <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider text-center block">
-              🎒 Волшебный Инвентарь Сказочных Вещей (NFT)
-            </span>
+            <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider text-center block">🎒 Волшебный Инвентарь Сказочных Вещей (NFT)</span>
             <div className="flex flex-row justify-center gap-2 w-full">
-              <button onClick={() => alert("Активирована Вешка [⚙️]...")} className="w-11 h-11 rounded-xl bg-[#161a1d]/80 border border-emerald-500/40 flex items-center justify-center text-base hover:border-emerald-400 shadow-inner relative transition-all active:scale-95 cursor-pointer">📍</button>
-              <button onClick={() => alert("Блюдечко запущено! Лента «Река Вещания»...")} className="w-11 h-11 rounded-xl bg-[#161a1d]/80 border border-cyan-500/40 flex items-center justify-center text-base hover:border-cyan-400 shadow-inner relative transition-all active:scale-95 cursor-pointer">🪞</button>
-              <button onClick={() => alert("Серебряный Колышек вбит...")} className="w-11 h-11 rounded-xl bg-[#161a1d]/80 border border-slate-400/40 flex items-center justify-center text-base hover:border-slate-300 shadow-inner relative transition-all active:scale-95 cursor-pointer">🔩</button>
+              <button onClick={() => alert("Активирована Путеводная Вешка...")} className="w-11 h-11 rounded-xl bg-[#161a1d]/80 border border-emerald-500/40 flex items-center justify-center text-base hover:border-emerald-400 shadow-inner relative transition-all cursor-pointer">📍</button>
+              <button onClick={() => alert("Блюдечко запущено! Лента «Река Вещания»...")} className="w-11 h-11 rounded-xl bg-[#161a1d]/80 border border-cyan-500/40 flex items-center justify-center text-base hover:border-cyan-400 shadow-inner relative transition-all cursor-pointer">🪞</button>
+              <button onClick={() => alert("Серебряный Колышек вбит...")} className="w-11 h-11 rounded-xl bg-[#161a1d]/80 border border-slate-400/40 flex items-center justify-center text-base hover:border-slate-300 shadow-inner relative transition-all cursor-pointer">🔩</button>
               <div className="w-11 h-11 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-center text-base grayscale opacity-30 shadow-md">🧪</div>
               <div className="w-11 h-11 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-center text-base grayscale opacity-30 shadow-md">🌟</div>
               <div className="w-11 h-11 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-center text-base grayscale opacity-30 shadow-md">🪢</div>
@@ -258,15 +271,19 @@ export default function MirrorGlobalContainer() {
             ${isWitchcraftStyle ? 'bg-[#1a1f22]' : 'bg-[#0f111a]'}`}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* УРОВЕНЬ 0: Четыре Лика Истока (Шапка Профиля) */}
+          {/* УРОВЕНЬ 0: Четыре Лика Истока (Шапка Профиля) — ТЕПЕРЬ ПОЛНОСТЬЮ ДИНАМИЧЕСКИЙ РАСЧЁТ НА ОСНОВЕ CHERTOG_ID! */}
           <div className="w-full max-w-md mx-auto bg-black/30 border border-slate-800/50 rounded-xl p-2 flex flex-col gap-2 shrink-0">
-            <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider text-center block">🌌 Четыре Лика Истока Чертога</span>
+            <div className="flex flex-col text-center">
+              <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider">[{chertogLORE[activeChertogId as keyof typeof chertogLORE].code}]</span>
+              <span className="text-[11px] text-emerald-400 font-mono font-bold mt-0.5">🌌 Лики Истока Чертога №{activeChertogId < 10 ? `0${activeChertogId}` : activeChertogId}</span>
+            </div>
+            
             <div className="grid grid-cols-4 gap-2 text-center">
               {[
-                { icon: '🐾', name: 'Животное', desc: '🐾 Сакральный зверь-покровитель твоего Чертога.' },
-                { icon: '👁️', name: 'Божество', desc: '👁️ Высший Ведический Управитель Кона.' },
-                { icon: '🌳', name: 'Древо', desc: '🌳 Родовое Древо из 16 Матриц Числобога.' },
-                { icon: '🔮', name: 'Символ', desc: '🔮 Уникальное криптографическое начертание Образа.' }
+                { icon: chertogLORE[activeChertogId as keyof typeof chertogLORE].icon, name: 'Сущность', desc: `🐾 Священный Чертог: ${chertogLORE[activeChertogId as keyof typeof chertogLORE].name}.` },
+                { icon: '👁️', name: 'Покровитель', desc: `👁️ Высший Судья / Бог-Покровитель: ${chertogLORE[activeChertogId as keyof typeof chertogLORE].god}.` },
+                { icon: '🌳', name: 'Древо', desc: `🌳 Оболочка Древа: ${chertogLORE[activeChertogId as keyof typeof chertogLORE].tree}.` },
+                { icon: '🔮', name: 'Символ', desc: `🔮 Криптографический Исток Чертога: [${chertogLORE[activeChertogId as keyof typeof chertogLORE].code}].` }
               ].map((item) => (
                 <button 
                   key={item.name}
@@ -279,7 +296,7 @@ export default function MirrorGlobalContainer() {
               ))}
             </div>
             {activeLegend && (
-              <div className="p-2.5 bg-black/40 border border-slate-800/60 rounded-lg text-[11px] text-slate-300 font-medium font-mono animate-fadeIn">
+              <div className="p-2.5 bg-black/40 border border-slate-800/60 rounded-lg text-[11px] text-slate-300 font-medium font-mono animate-fadeIn text-center">
                 {activeLegend}
               </div>
             )}
@@ -294,13 +311,12 @@ export default function MirrorGlobalContainer() {
               </p>
             </div>
 
-            {/* Семейный статус P2P [Kinship_Scroll_Protocol] */}
             <div className="bg-black/20 border border-slate-800/40 rounded-xl p-3">
               <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider block mb-2 text-center">🧬 Кровное Древо Сородичей P2P</span>
               <div className="space-y-1.5 text-[11px] font-mono">
                 <div className="flex justify-between items-center bg-black/30 p-1.5 border border-slate-800/40 rounded-lg shadow-inner">
                   <span className="text-neutral-400">Жена:</span>
-                  <span className="text-amber-400 font-medium animate-pulse">👑 Ладослава (ID: Зеркальце Взведено)</span>
+                  <span className="text-amber-400 font-medium animate-pulse">👑 Ладослава (ID: {chertogLORE[activeChertogId as keyof typeof chertogLORE].code}_bond)</span>
                 </div>
                 <div className="flex justify-between items-center bg-black/30 p-1.5 border border-slate-800/40 rounded-lg">
                   <span className="text-neutral-400">Батюшка:</span>
@@ -356,7 +372,7 @@ export default function MirrorGlobalContainer() {
               </label>
             </div>
             
-            {/* Глобальный симулятор 9 Фонов Портала: Добавлено явное приведение к числу Number() */}
+            {/* Глобальный симулятор 9 Фонов Портала по ТЗ */}
             <div className="pt-1.5 border-t border-slate-800/40 flex items-center justify-between gap-2 text-[10px]">
               <span className="text-neutral-500">Симуляция Фонов (1-9):</span>
               <select 
@@ -371,7 +387,6 @@ export default function MirrorGlobalContainer() {
             </div>
           </div>
 
-          {/* Кнопка закрытия Летописи */}
           <button 
             onClick={() => setMirrorState('HALF')} 
             className="w-full max-w-xs mx-auto bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl py-2 px-4 text-xs font-semibold tracking-wide transition-all text-center mt-3 shrink-0 cursor-pointer"
