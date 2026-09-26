@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 
-// [UI_Vessel_Yaga_Oracle_Core] + [UI_Yaga_Hard_Reset_Gate] + [Artel_Fintech_Tax_Gate] + [UI_Vessel_Gornitsa_Core] + [UI_Chests_View_Core]
-// Оракул Бабы Яги (Фон 9) — Трехступенчатый Reset Навьего Тела, анлок 10-го токена Яги и крио-центр очистки
+// [UI_Vessel_World_Veche_Core] + [UI_Vessel_Knyaz_Dvor_Core] + [UI_Vessel_Zabavy_Core] + [UI_Vessel_Artel_Palata_Core] + [UI_Vessel_Gornitsa_Core]
+// ФИНАЛЬНАЯ СБОРКА: Полная ПК-сетка "Синего Вестника" со сквозным переключением всех 8 фонов Портала
 export default function IzbaComponent() {
-  // 7 Истинных Балансов Казны (Динамический Янтарь для списаний)
+  // 7 Истинных Балансов Казны
   const [balances, setBalances] = useState({
-    yntPersonal: 1241.00,
+    yntPersonal: 1240.00,
     yntDeposit: 40.00,
     rayLight: '12 / 24',
     pathVeles: 450,
@@ -16,14 +16,23 @@ export default function IzbaComponent() {
 
   const totalGodsRays = balances.pathVeles + balances.pathPerun + balances.pathSvarog;
 
-  // Глобальные стейты поиска, горниц Терема, финтех-сделок, Палаты (Фон 5) и Двора (Фон 6)
+  // Глобальные стейты интерактивного P2P поиска и активного чата
   const [searchQuery, setSearchText] = useState('');
+  const [activeChat, setActiveChat] = useState(2); // Изба активна по умолчанию при старте!
+
+  // Стейты Фона 3 (Простой Терем)
   const [currentGornitsa, setCurrentGornitsa] = useState<'ALL' | 'BARTER' | 'CENZ' | 'CHRONICLES'>('ALL');
+  const [isDosAttack, setIsDosAttack] = useState(false);
+
+  // Стейты Фона 4 (Торговая Артель)
   const [dealAmount, setDealAmount] = useState('100');
-  const [vesselAccessLevel, setAccessLevel] = useState<'OPEN' | 'CLOSED'>('OPEN');
+
+  // Стейты Фона 5 (Вечевая Палата)
+  const [vesselAccessLevel, setAccessLevel] = useState<'OPEN' | 'CLOSED'>('CLOSED'); // Сразу в режиме Боярского Вече
   const [rebellionPulse, setRebellionPulse] = useState(45);
   const [boiarSignatures, setBoiarSignatures] = useState([true, false, false]);
 
+  // Стейты Фона 6 (Княжеский Двор)
   const [isBlizzardActive, setIsBlizzardActive] = useState(false);
   const [selectedBoiarBuilding, setSelectedBoiarBuilding] = useState<number | null>(null);
   const [boiarEstates, setBoiarBuilding] = useState([
@@ -33,7 +42,7 @@ export default function IzbaComponent() {
     { id: 4, name: 'Заброшенная Нода Мстислава', owner: 'Мстислав', shape: 'SQUARE', icon: '🪵', activeLock: false, hasDeposit: false }
   ]);
 
-  // Стейты Мирового Вече (Фон 7)
+  // Стейты Фона 7 (Мировое Вече)
   const [vecheChin, setVecheChin] = useState<'ПРОХОЖИЙ' | 'БОЯРИН' | 'КУДЕСНИК'>('БОЯРИН');
   const [isArchitectModifier, setIsArchitectModifier] = useState(false);
   const [vecheProposals, setVecheProposals] = useState([
@@ -41,17 +50,16 @@ export default function IzbaComponent() {
     { id: 2, title: 'Распределение Общемирового Светового Котла в Пул Валидаторов', quorum: 42, votesLubor: 210, votesNelubor: 190, isVetoActive: false }
   ]);
 
-  // ================= ФОН 9: СУВЕРЕННЫЕ СТЕЙТЫ ОРАКУЛА БАБЫ ЯГИ =================
+  // Стейты Фона 9 (Оракул Бабы Яги)
   const [showResetModal, setShowResetModal] = useState(false);
-  const [resetStep, setResetStep] = useState<number>(0); // Пошаговый пульт очистки 1-3
+  const [resetStep, setResetStep] = useState<number>(0);
   const [vechePassphrase, setVechePassphrase] = useState('');
-  const [isYagaUnlocked, setIsYagaUnlocked] = useState(false); // Скрытый 10-й токен Бабы Яги
-  const [isSpringFlowing, setIsSpringFlowing] = useState(false); // Поток синей Живой Воды
+  const [isYagaUnlocked, setIsYagaUnlocked] = useState(false);
+  const [isSpringFlowing, setIsSpringFlowing] = useState(false);
 
-  // Локальная симуляция DoS-нагрузки Скомороха
-  const [isDosAttack, setIsDosAttack] = useState(false);
+  const [inputText, setInputText] = useState('');
 
-  // Обновленная Матрица Фонов Портала по ТЗ (Фон 9 модернизирован в Оракул Яги)
+  // Валидированная Матрица 8 Фонов Портала по ТЗ
   const chatDatabase = [
     { id: 1, name: 'Родовая Поляна Чертога', type: 'Главный Экран', chatId: 'chertog_meadow_main', icon: '🌳', status: 'в сети' },
     { id: 2, name: 'Изба (Приватный чат)', type: 'Семейный Круг', chatId: 'izba_private_chat', icon: '🏡', status: 'в сети' },
@@ -59,34 +67,44 @@ export default function IzbaComponent() {
     { id: 4, name: 'Терем-Артель', type: 'Рабочая Мастерская', chatId: 'terem_artel_workshop', icon: '🔨', status: 'кипит световой бартер' },
     { id: 5, name: 'Вечевая Палата', type: 'Локальный Форум', chatId: 'veche_palata_forum', icon: '🏛️', status: 'Бояре на помосте' },
     { id: 6, name: 'Княжеский Двор', type: 'Супер-Сообщество', chatId: 'kniaz_dvor_super_community', icon: '👑', status: 'лазерные межи портов' },
-    { id: 7, name: 'Глобальное Вече Царства', type: 'Главная Площадь', chatId: 'global_veche_square', icon: '🔔', status: 'голографические кворумы' },
-    { id: 9, name: 'Оракул Бабы Яги', type: 'Берёзовый Родник (Фон 9)', chatId: 'yaga_oracle_node', icon: '🧪', status: 'квантовый крио-центр' }
+    { id: 7, name: 'Глобальное Вече Царства', type: 'Главная Площадь', chatId: 'global_veche_square', icon: '🔔', status: 'ситуационный крио-центр' },
+    { id: 9, name: 'Оракул Бабы Яги', type: 'Берёзовый Родник', chatId: 'yaga_oracle_node', icon: '🧪', status: 'квантовый шлюз памяти' }
   ];
 
-  const [activeChat, setActiveChat] = useState(9); // Оракул Яги активен по умолчанию для теста
-  const [inputText, setInputText] = useState('');
-
-  // Расширенная Берестяная Почта под Фоны мессенджера
+  // Массив сообщений под каждую уникальную комнату
   const [mailRepository, setMailRepository] = useState<{ [key: string]: Array<{ id: number; sender: string; text: string; time: string; isMe: boolean; tag: string }> }>({
-    'prostoy_terem_community': [{ id: 301, sender: 'Семейный Хранитель', text: '📜 Горница защищена Коном.', time: '14:20', isMe: false, tag: 'CHRONICLES' }],
-    'terem_artel_workshop': [{ id: 401, sender: 'Мастер Ратибор', text: '🔨 Лоза Артели проросла сочно.', time: '10:15', isMe: false, tag: 'SYSTEM' }],
-    'veche_palata_forum': [{ id: 501, sender: 'Дворецкий Места', text: '🗝️ Сбор взносов в Пул Игрищ открыт.', time: '11:02', isMe: false, tag: 'SYSTEM' }],
-    'kniaz_dvor_super_community': [{ id: 601, sender: 'Елена Премудрая', text: '📖 Все лазерные линии связи активны.', time: '16:00', isMe: false, tag: 'SYSTEM' }],
-    'global_veche_square': [{ id: 701, sender: 'Елена Премудрая', text: '📖 Всемирный Сход Блокчейн-Парламента открыт.', time: '17:00', isMe: false, tag: 'SYSTEM' }],
+    'chertog_meadow_main': [{ id: 101, sender: 'Ведун', text: 'Добро пожаловать на Родовую Поляну. Твое Древо Чертога активно.', time: '08:00', isMe: false, tag: 'SYSTEM' }],
+    'izba_private_chat': [
+      { id: 201, sender: 'Ладослава', text: 'Добро войти в наш семейный Круг, соратник! Ключ Ed25519 взведён ладно.', time: '12:34', isMe: false, tag: 'CHAT' },
+      { id: 202, sender: 'Вы', text: 'Здравствуй! Думы пишутся на бересте чисто. Проверяю сокет-мост мессенджера.', time: '12:36', isMe: true, tag: 'CHAT' }
+    ],
+    'prostoy_terem_community': [
+      { id: 301, sender: 'Семейный Хранитель', text: '📜 Горница защищена Коном Семейного Хранителя. Вход по P2P-инвайтам.', time: '14:20', isMe: false, tag: 'CHRONICLES' },
+      { id: 302, sender: 'Брат Радомир', text: '🌾 Обменяю 10 Лучиков Света на 2 Янтаря в Горнице Бартера.', time: '14:22', isMe: false, tag: 'BARTER' },
+      { id: 303, sender: 'Вы', text: '🛡️ Порог ценза в 27 участников пройден, чужаков в узлах ноды нет.', time: '14:25', isMe: true, tag: 'CENZ' }
+    ],
+    'terem_artel_workshop': [
+      { id: 401, sender: 'Мастер Ратибор', text: '🔨 Лоза Артели проросла сочно, залог в 40 YNT успешно синхронизирован в блокчейне.', time: '10:15', isMe: false, tag: 'SYSTEM' },
+      { id: 402, sender: 'Кузнец Борислав', text: '💼 Выставляю счёт за Оболочку Зеркальца. Проверьте плашку финтех-налога 27%.', time: '10:18', isMe: false, tag: 'TRADE' }
+    ],
+    'veche_palata_forum': [
+      { id: 501, sender: 'Дворецкий Места', text: '🗝️ Приветствую, Бояре! Сбор взносов в Пул Игрищ (9 YNT) открыт.', time: '11:02', isMe: false, tag: 'SYSTEM' },
+      { id: 502, sender: 'Боярин Мстислав', text: '⚡ Управляющий нарушает Коны общины! Вечевой Пульс Бунта запущен.', time: '11:05', isMe: false, tag: 'VETO' }
+    ],
+    'kniaz_dvor_super_community': [
+      { id: 601, sender: 'Елена Премудрая', text: '📖 [Веды] Приветствую сородичей на Генеральном Плане Двора. Лазерные линии связи активны.', time: '16:00', isMe: false, tag: 'SYSTEM' }
+    ],
+    'global_veche_square': [
+      { id: 701, sender: 'Елена Премудрая', text: '📖 Открываю Всемирный Сход Глобального Блокчейн-Парламента. Голографический кворум активен.', time: '17:00', isMe: false, tag: 'SYSTEM' }
+    ],
     'yaga_oracle_node': [
-      { id: 901, sender: 'Оракул Яги', text: '🧪 Квантовые шлюзы глубокой очистки памяти PocketDb взведены. Костяная ступа готова к регенерации сокетов.', time: '18:00', isMe: false, tag: 'SYSTEM' },
-      { id: 902, sender: 'Вы', text: 'Клик по Берёзовому Роднику запустит метод Birch_Spring_Flow для анлока скрытого токена Яги.', time: '18:02', isMe: true, tag: 'ORACLE' }
+      { id: 901, sender: 'Оракул Яги', text: '🧪 Квантовые шлюзы глубокой очистки памяти PocketDb взведены.', time: '18:00', isMe: false, tag: 'SYSTEM' }
     ]
   });
 
   const getChatKeyById = (id: number) => {
-    if (id === 3) return 'prostoy_terem_community';
-    if (id === 4) return 'terem_artel_workshop';
-    if (id === 5) return 'veche_palata_forum';
-    if (id === 6) return 'kniaz_dvor_super_community';
-    if (id === 7) return 'global_veche_square';
-    if (id === 9) return 'yaga_oracle_node';
-    return 'prostoy_terem_community';
+    const found = chatDatabase.find(c => c.id === id);
+    return found ? found.chatId : 'izba_private_chat';
   };
 
   const currentMessages = mailRepository[getChatKeyById(activeChat)] || [];
@@ -96,37 +114,18 @@ export default function IzbaComponent() {
     return msg.tag === currentGornitsa;
   });
 
-  // Финтех-Шлюз Берёзового Родника: Списание и безвозвратное сжигание 1 YNT
-  const handleBirchSpringFlow = () => {
-    if (balances.yntPersonal < 1) {
-      alert("Отлуп ядра: Недостаточно Янтаря для активации Оракула!");
-      return;
-    }
-    setIsSpringFlowing(true);
-    setBalances(prev => ({ ...prev, yntPersonal: prev.yntPersonal - 1 }));
-    
-    // Анимация потока Живой Воды и анлок ИИ-Агента Бабы Яги
-    setTimeout(() => {
-      setIsSpringFlowing(false);
-      setIsYagaUnlocked(true);
-      alert("✨ Хрустальный звон: С кошелька ноды сожжен 1 YNT! Скрытый 10-й токен Бабы Яги разблокирован для призыва в Совет!");
-    }, 2000);
-  };
-
   const handleSendMessage = () => {
     if (!inputText.trim()) return;
+    const currentKey = getChatKeyById(activeChat);
     const newMsg = {
       id: Date.now(),
       sender: 'Вы',
-      text: inputText,
-      time: '18:05',
+      text: isDosAttack && activeChat === 3 ? 'Ква-ква! 🐸' : inputText,
+      time: '19:00',
       isMe: true,
-      tag: 'ORACLE_CHAT'
+      tag: activeChat === 3 ? currentGornitsa : 'CHAT'
     };
-    setMailRepository({
-      ...mailRepository,
-      [getChatKeyById(activeChat)]: [...currentMessages, newMsg]
-    });
+    setMailRepository({ ...mailRepository, [currentKey]: [...(mailRepository[currentKey] || []), newMsg] });
     setInputText('');
   };
 
@@ -140,6 +139,20 @@ export default function IzbaComponent() {
     setVecheProposals(prev => prev.map(p => p.id === proposalId ? (type === 'LUBO' ? { ...p, votesLubor: p.votesLubor + finalWeight, quorum: Math.min(p.quorum + 2, 100) } : { ...p, votesNelubor: p.votesNelubor + finalWeight, isVetoActive: true }) : p));
   };
 
+  const handleBirchSpringFlow = () => {
+    if (balances.yntPersonal < 1) {
+      alert("Отлуп ядра: Недостаточно Янтаря для активации Оракула!");
+      return;
+    }
+    setIsSpringFlowing(true);
+    setBalances(prev => ({ ...prev, yntPersonal: prev.yntPersonal - 1 }));
+    setTimeout(() => {
+      setIsSpringFlowing(false);
+      setIsYagaUnlocked(true);
+      alert("✨ Хрустальный звон: Сожжен 1 YNT! Скрытый 10-й токен Бабы Яги разблокирован!");
+    }, 2000);
+  };
+
   const filteredChats = chatDatabase.filter(chat => 
     chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     chat.chatId.toLowerCase().includes(searchQuery.toLowerCase())
@@ -151,7 +164,7 @@ export default function IzbaComponent() {
   return (
     <div className="w-full h-full flex flex-col justify-between font-sans antialiased text-slate-200">
       
-      {/* ВЕРХНИЙ СЛОЙ: Тонкая плашка 7 Балансов (max-w-[1152px]) */}
+      {/* СЛОЙ ПЛАШКИ 7 БАЛАНСОВ */}
       <div className="w-full max-w-[1152px] mx-auto bg-gradient-to-r from-emerald-800/40 to-slate-800/70 border border-slate-700/40 rounded-xl p-1.5 pr-4 pb-2.5 pt-2.5 mb-4 shadow-xl relative shrink-0">
         <div className="flex flex-row items-center gap-2.5 overflow-x-auto scrollbar-none justify-between w-full">
           <div className="flex items-center gap-2 shrink-0 bg-[#161a1d]/60 border border-slate-700/50 px-2.5 py-0.5 rounded-lg">
@@ -192,10 +205,10 @@ export default function IzbaComponent() {
         </div>
       </div>
 
-      {/* ГЛАВНЫЙ ДВУХПАНЕЛЬНЫЙ ДИЗАЙН МЕССЕНДЖЕРА */}
+      {/* ГЛАВНЫЙ ГРИД С ПАНЕЛЯМИ */}
       <div className="flex-1 flex flex-row w-full max-w-[1152px] mx-auto gap-4 items-stretch overflow-hidden h-[calc(100vh-140px)]">
         
-        {/* ЛЕВАЯ ПАНЕЛЬ: Список чатов Портала */}
+        {/* ЛЕВАЯ ПАНЕЛЬ С СЕЛЕКТОРАМИ */}
         <div className="w-[320px] shrink-0 bg-[#1e2326]/60 border border-slate-700/40 rounded-2xl p-3 flex flex-col gap-2 overflow-hidden shadow-md">
           <div className="w-full relative shrink-0">
             <input 
@@ -207,22 +220,19 @@ export default function IzbaComponent() {
             />
           </div>
 
-          {/* УРОВЕНЬ II ТЕРЕМА (Фон 3) */}
           {activeChat === 3 && (
-            <button onClick={() => setCurrentGornitsa('ALL')} className="w-full py-2 px-3 rounded-xl border border-amber-900/40 bg-amber-950/20 text-slate-400 font-mono font-bold text-center text-xs transition-all shrink-0 cursor-pointer">📢 Вечевой Набат</button>
+            <button onClick={() => setCurrentGornitsa('ALL')} className={`w-full py-2 px-3 rounded-xl border font-mono font-bold text-center text-xs transition-all shrink-0 cursor-pointer ${currentGornitsa === 'ALL' ? 'bg-gradient-to-r from-amber-600/30 to-orange-600/30 border-amber-500/50 text-amber-400 shadow-inner' : 'bg-amber-950/20 border-amber-900/40 text-slate-400'}`}>📢 Вечевой Набат</button>
           )}
 
-          {/* ФОН 5: Переключатель */}
           {activeChat === 5 && (
             <div className="w-full p-1.5 bg-black/20 rounded-xl border border-slate-800 flex flex-col gap-1 shrink-0 text-center select-none font-mono">
               <span className="text-[8px] text-neutral-500 uppercase font-bold">Допуск Управления Палатой</span>
-              <button onClick={() => setAccessLevel(vesselAccessLevel === 'OPEN' ? 'CLOSED' : 'OPEN')} className="w-full py-1 rounded-lg text-[10px] border transition-all bg-slate-900 border-slate-700 text-slate-400">
+              <button onClick={() => setAccessLevel(vesselAccessLevel === 'OPEN' ? 'CLOSED' : 'OPEN')} className={`w-full py-1 rounded-lg text-[10px] border transition-all ${vesselAccessLevel === 'CLOSED' ? 'bg-amber-950/40 border-amber-500/40 text-amber-400 font-bold' : 'bg-slate-900 border-slate-700 text-slate-400'}`}>
                 {vesselAccessLevel === 'CLOSED' ? '🔒 Закрытая Палата (Терем)' : '🍃 Открытая Поляна'}
               </button>
             </div>
           )}
 
-          {/* ФОН 6: Пурга */}
           {activeChat === 6 && (
             <div className="w-full p-1.5 bg-black/20 rounded-xl border border-slate-800 flex flex-col gap-1 shrink-0 text-center select-none font-mono">
               <span className="text-[8px] text-neutral-500 uppercase font-bold">Метео-Шлюз Живой Погоды</span>
@@ -232,7 +242,6 @@ export default function IzbaComponent() {
             </div>
           )}
 
-          {/* ФОН 7: Селектор */}
           {activeChat === 7 && (
             <div className="w-full p-2 bg-black/20 rounded-xl border border-slate-800 flex flex-col gap-2 shrink-0 select-none font-mono text-center">
               <span className="text-[8px] text-neutral-500 uppercase font-bold">Чин Глобального Парламента</span>
@@ -254,7 +263,7 @@ export default function IzbaComponent() {
             {filteredChats.map((chat) => (
               <button
                 key={chat.id}
-                onClick={() => { setActiveChat(chat.id); if(chat.id !== 3) setCurrentGornitsa('ALL'); }}
+                onClick={() => setActiveChat(chat.id)}
                 className={`w-full flex items-center justify-between p-2 rounded-xl transition-all border text-left cursor-pointer
                   ${activeChat === chat.id ? 'bg-gradient-to-r from-emerald-950/40 to-slate-800/40 border-emerald-500/30 shadow-inner' : 'bg-[#161a1d]/40 border-transparent hover:bg-slate-800/20'}`}
               >
@@ -272,144 +281,181 @@ export default function IzbaComponent() {
           </div>
         </div>
 
-        {/* ПРАВАЯ ПАНЕЛЬ: Квантовый крио-центр Оракула Яги */}
+        {/* ПРАВАЯ ПАНЕЛЬ С СЕГМЕНТАЦИЕЙ ПОДКЛЮЧЕНИЙ */}
         <div className={`flex-1 border border-slate-700/40 rounded-2xl flex flex-col overflow-hidden shadow-xl relative transition-all duration-500
-          ${activeChat === 9 ? 'bg-gradient-to-b from-[#111116] to-[#07090d] border-emerald-900/30' : 'bg-[#1e2326]/60'}
+          ${activeChat === 7 ? 'bg-gradient-to-b from-[#0b101d] to-[#080a12] border-cyan-900/40' : 'bg-[#1e2326]/60'}
           ${activeChat === 5 && vesselAccessLevel === 'CLOSED' ? 'bg-[#221e1a]/80 border-amber-900/40' : ''}
-          ${activeChat === 6 && isBlizzardActive ? 'bg-[#0f1522]/90 border-sky-800/40' : ''}`}>
+          ${activeChat === 6 && isBlizzardActive ? 'bg-[#0f1522]/90 border-sky-800/40' : ''}
+          ${activeChat === 9 ? 'bg-gradient-to-b from-[#111116] to-[#07090d] border-emerald-900/30' : ''}`}>
           
           {activeChat === 6 && isBlizzardActive && (
-            <div className="absolute inset-0 bg-sky-400/5 pointer-events-none z-30 animate-pulse backdrop-blur-[1px] flex items-center justify-center font-mono text-[10px] text-sky-400 uppercase tracking-widest select-none">❄️ [ВЗВЕДЁН ЗАТВОР ЭКСТРЕМАЛЬНОЙ ПОГОДЫ] ❄️</div>
+            <div className="absolute inset-0 bg-sky-400/5 pointer-events-none z-30 animate-pulse backdrop-blur-[1px] flex items-center justify-center font-mono text-[10px] text-sky-400 uppercase tracking-widest select-none">❄️ [ВЗВЕДЁН ЗАТВОР ЭКСТРЕМАЛЬНОЙ ПОГОДЫ — ЛЕДЯНАЯ ПУРГА] ❄️</div>
           )}
 
-          {/* Шапка чата */}
+          {/* Шапка сообщений */}
           <div className="p-3 border-b border-slate-700/40 bg-black/10 flex items-center justify-between shrink-0 select-none">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-[#161a1d] border border-slate-700/50 flex items-center justify-center text-sm shadow-sm">
-                {chatDatabase.find(c => c.id === activeChat)?.icon || '🧪'}
+                {chatDatabase.find(c => c.id === activeChat)?.icon || '🏡'}
               </div>
               <div className="leading-tight">
-                <h3 className="text-xs font-semibold text-slate-200">
-                  {activeChat === 9 ? 'Квантовый крио-центр Оракула Яги' : chatDatabase.find(c => c.id === activeChat)?.name}
-                </h3>
+                <h3 className="text-xs font-semibold text-slate-200">{chatDatabase.find(c => c.id === activeChat)?.name}</h3>
                 <span className="text-[10px] font-mono font-medium text-emerald-400 block mt-0.5 animate-pulse">
-                  ● {activeChat === 9 && isYagaUnlocked ? '10-й скрытый токен Яги РАЗБЛОКИРОВАН 🧪' : chatDatabase.find(c => c.id === activeChat)?.status}
+                  ● {activeChat === 7 ? `весовое плечо голоса активно` : activeChat === 6 && isBlizzardActive ? 'пурга на портах 8027/8028' : chatDatabase.find(c => c.id === activeChat)?.status}
                 </span>
               </div>
             </div>
 
-            {/* ИИ-АГЕНТЫ В ШАПКЕ ЧАТА (Фон 9 = Баба Яга 🧪 со ступой) */}
-            {activeChat === 9 && (
-              <div className="flex items-center gap-3 pr-2 select-none">
-                <div className="text-xl animate-bounce duration-[3500ms] cursor-help" title="ИИ-Агент Баба Яга 🧪 парит в костяной ступе, ухмыляясь на 16-й минуте простоя.">🧪</div>
-              </div>
-            )}
-            
-            {activeChat === 6 && (
-              <div className="flex items-center gap-2 pr-2 select-none"><div className="text-xl animate-bounce duration-[4500ms] cursor-help">📖</div></div>
-            )}
-            {activeChat === 3 && (
-              <div className="flex items-center gap-2 pr-2"><button onClick={() => setIsDosAttack(!isDosAttack)} className="px-1.5 py-0.5 text-[8px] font-mono border rounded bg-slate-900 border-slate-700 text-slate-400">Стабильно</button><div className="text-xl animate-bounce duration-[4000ms]">🤪</div></div>
-            )}
-            {activeChat === 5 && (
-              <div className="flex items-center gap-2 pr-2"><div className="text-xl animate-bounce duration-[4000ms] cursor-help">🕵️‍♂️</div></div>
-            )}
+            {/* ИИ АГЕНТЫ В ШАПКЕ ЧАТА */}
+            <div className="flex items-center gap-2 pr-2 select-none">
+              {activeChat === 3 && <div className="text-xl animate-bounce" title="ИИ-Скоморох 🤪">🤪</div>}
+              {activeChat === 5 && <div className="text-xl animate-bounce" title="ИИ-Дворецкий Места 🕵️‍♂️">🕵️‍♂️</div>}
+              {activeChat === 6 && <div className="text-xl animate-bounce" title="ИИ-Елена Премудрая 📖">📖</div>}
+              {activeChat === 7 && <div className="flex gap-2"><div className="text-xl animate-pulse">📖</div><div className="text-xl animate-bounce">🕵️‍♂️</div></div>}
+              {activeChat === 9 && <div className="text-xl animate-bounce" title="ИИ-Баба Яга 🧪">🧪</div>}
+            </div>
 
             <span className="text-[9px] font-mono text-neutral-500 px-2 py-0.5 bg-neutral-950/30 rounded-lg">
               id: {chatDatabase.find(c => c.id === activeChat)?.chatId || 'unknown'}
             </span>
           </div>
 
-          {/* ИНТЕРФЕЙС ИГРОВОГО СХОДА ДЛЯ ФОНА 9 (Оракул Бабы Яги) */}
-          {activeChat === 9 && (
-            <div className="w-full flex-1 flex flex-col p-4 overflow-hidden gap-4 justify-start font-mono select-none animate-fadeIn">
-              
-              {/* Верхняя интерактивная зона: Избушка и Берёзовый Родник */}
-              <div className="grid grid-cols-2 gap-3 w-full">
-                
-                {/* Клик-Зона Избушки — Вызов Пульта Трёхступенчатого Reset */}
-                <button 
-                  onClick={() => { setShowResetModal(true); setResetStep(1); }}
-                  className="p-3 bg-black/40 border border-slate-800 rounded-xl hover:border-emerald-500/40 transition-all flex flex-col items-center justify-center gap-2 text-center h-28 cursor-pointer shadow-md"
-                >
-                  <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(16,185,129,0.3)] animate-pulse">🏡</span>
-                  <div className="leading-tight">
-                    <span className="text-[10px] text-slate-200 block font-bold">Избушка Яги</span>
-                    <span className="text-[7.5px] text-neutral-500 block mt-0.5">Клик — Системный Reset Навьего Тела</span>
-                  </div>
-                </button>
+          {/* ДИНАМИЧЕСКИЕ ПЛАШКИ ФОНОВ 4 И 5 */}
+          {activeChat === 4 && (
+            <div className="w-full bg-[#161a1d]/60 p-2.5 border-b border-slate-700/30 flex flex-col md:flex-row gap-3 items-center justify-between shrink-0 font-mono select-none animate-fadeIn">
+              <div className="flex items-center gap-2 min-w-0"><span className="text-lg animate-pulse">🌿</span><div className="leading-tight min-w-0"><span className="text-[10px] text-emerald-400 font-bold block">[Лоза Артели Проросла]</span><span className="text-[8px] text-neutral-500 truncate block">Бартер активен. Залог 40 YNT запечён.</span></div></div>
+              <div className="flex items-center gap-2 bg-black/40 border border-slate-800 p-1.5 rounded-xl text-[10px] w-full md:max-w-xs justify-between">
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex gap-1 text-slate-300"><span>Сумма:</span><input type="number" value={dealAmount} onChange={(e) => setDealAmount(e.target.value)} className="w-12 bg-transparent border-b border-slate-700 text-emerald-400 focus:outline-none text-center font-bold font-mono" /></div>
+                  <span className="text-[8px] text-amber-500 font-bold">🍎 Tax 27%: +{appleTax} YNT</span>
+                </div>
+                <div className="w-px h-6 bg-slate-800"></div>
+                <div className="text-right leading-tight"><span className="text-[7.5px] text-neutral-500 block uppercase">Выход в Пул</span><span className="text-xs font-bold text-slate-200">{totalWithTax} YNT</span></div>
+                <button onClick={() => alert(`Транзакция запечена: ${totalWithTax} YNT.`)} className="px-2.5 py-1 bg-emerald-700 text-white text-[9px] font-bold rounded-lg cursor-pointer">💸 Оплатить</button>
+              </div>
+            </div>
+          )}
 
-                {/* Финтех-Шлюз Берёзового Родника */}
-                <button
-                  onClick={handleBirchSpringFlow}
-                  disabled={isSpringFlowing}
-                  className={`p-3 bg-black/40 border rounded-xl transition-all flex flex-col items-center justify-center gap-2 text-center h-28 cursor-pointer shadow-md relative overflow-hidden
-                    ${isSpringFlowing ? 'border-cyan-500 bg-cyan-950/20' : 'border-slate-800 hover:border-cyan-500/40'}
-                    ${isYagaUnlocked ? 'border-emerald-500/30 shadow-[0_0_8px_rgba(52,211,153,0.1)]' : ''}`}
-                >
-                  {isSpringFlowing && (
-                    <div className="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none z-0"></div>
-                  )}
-                  <span className={`text-3xl z-10 ${isSpringFlowing ? 'animate-bounce' : ''}`}>🪵💧</span>
-                  <div className="leading-tight z-10">
-                    <span className="text-[10px] text-cyan-400 block font-bold">Берёзовый Родник</span>
-                    <span className="text-[7.5px] text-neutral-500 block mt-0.5">
-                      {isYagaUnlocked ? 'Активирован [Анлок Яги ✓]' : 'Сжечь 1 YNT — Влить Живую Воду'}
-                    </span>
+          {activeChat === 5 && vesselAccessLevel === 'CLOSED' && (
+            <div className="w-full bg-amber-950/20 p-2.5 border-b border-amber-900/30 flex flex-col md:flex-row gap-3 items-center justify-between shrink-0 font-mono select-none animate-fadeIn">
+              <div className="w-full md:max-w-xs space-y-1"><div className="flex justify-between text-[8px] font-bold text-amber-500 uppercase"><span>⚡ Вечевой Пульс Бунта против Управляющего</span><span>{rebellionPulse}%</span></div><div className="w-full bg-black/40 border border-slate-800 h-1.5 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-amber-600 to-red-600" style={{ width: `${rebellionPulse}%` }}></div></div></div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[8px] text-neutral-500 uppercase font-bold">Вето Бояр:</span>
+                <div className="flex gap-1">
+                  {boiarSignatures.map((signed, idx) => (
+                    <button key={idx} onClick={() => { const updated = [...boiarSignatures]; updated[idx] = !updated[idx]; setBoiarSignatures(updated); setRebellionPulse(updated.filter(Boolean).length * 25 + 20); }} className={`w-5 h-5 rounded border text-[8px] font-bold flex items-center justify-center cursor-pointer ${signed ? 'bg-red-900/40 border-red-500 text-red-400 shadow-inner' : 'bg-slate-900 border-slate-800 text-neutral-600'}`}>{signed ? '🔒' : '✍️'}</button>
+                  ))}
+                </div>
+                {rebellionPulse >= 70 && <span className="text-[8px] font-bold bg-red-900/60 border border-red-500 px-1.5 py-0.5 rounded text-red-400 animate-pulse uppercase">Блокирован!</span>}
+              </div>
+            </div>
+          )}
+
+          {/* ИНТЕРФЕЙС ГОРНИЦ ДЛЯ ФОНА 3 (Простой Терем) */}
+          {activeChat === 3 && (
+            <div className="w-full bg-black/10 p-2 border-b border-slate-700/20 flex flex-row items-center gap-3 justify-center shrink-0 overflow-x-auto scrollbar-none select-none">
+              <button onClick={() => setCurrentGornitsa('BARTER')} className={`px-3 py-1 rounded-full text-[10px] font-mono font-medium border transition-all cursor-pointer shadow-sm ${currentGornitsa === 'BARTER' ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400 font-bold' : 'bg-[#161a1d]/60 border-slate-800 text-slate-400'}`}>🌾 Горница Бартера</button>
+              <button onClick={() => setCurrentGornitsa('CENZ')} className={`px-3 py-1 rounded-full text-[10px] font-mono font-medium border transition-all cursor-pointer shadow-sm ${currentGornitsa === 'CENZ' ? 'bg-cyan-950/40 border-cyan-500/40 text-cyan-400 font-bold' : 'bg-[#161a1d]/60 border-slate-800 text-slate-400'}`}>🛡️ Горница Ценза</button>
+              <button onClick={() => setCurrentGornitsa('CHRONICLES')} className={`px-3 py-1 rounded-full text-[10px] font-mono font-medium border transition-all cursor-pointer shadow-sm ${currentGornitsa === 'CHRONICLES' ? 'bg-amber-950/40 border-amber-500/40 text-amber-400 font-bold' : 'bg-[#161a1d]/60 border-slate-800 text-slate-400'}`}>📜 Горница Летописей</button>
+            </div>
+          )}
+
+          {/* ИНТЕРФЕЙС ГЕНЕРАЛЬНОГО ПЛАНА ДЛЯ ФОНА 6 (Княжеский Двор) */}
+          {activeChat === 6 && (
+            <div className="w-full p-3 bg-black/20 border-b border-slate-700/20 flex flex-col gap-2 shrink-0 font-mono select-none animate-fadeIn">
+              <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider block text-center">[🗺️ Интерактивный Генеральный План Владений Бояр]</span>
+              <div className="grid grid-cols-4 gap-2.5 w-full">
+                {boiarEstates.map((estate) => (
+                  <button
+                    key={estate.id}
+                    onClick={() => {
+                      setSelectedBoiarBuilding(selectedBoiarBuilding === estate.id ? null : estate.id);
+                      handleToggleBuildingLock(estate.id);
+                    }}
+                    className={`p-2 border flex flex-col items-center justify-center gap-1 transition-all relative text-center group cursor-pointer
+                      ${estate.shape === 'CIRCLE' ? 'rounded-full w-20 h-24 mx-auto' : 'rounded-xl'}
+                      ${!estate.hasDeposit ? 'bg-slate-950/80 border-slate-900 text-neutral-600 grayscale contrast-75 brightness-75' : 'bg-[#161a1d]/80 border-slate-800 text-slate-300 hover:border-slate-500'}
+                      ${estate.activeLock ? 'border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.2)]' : ''}`}
+                    title={!estate.hasDeposit ? `${estate.name} — Залог пуст!` : `${estate.name} — Хозяин: ${estate.owner}`}
+                  >
+                    {!estate.hasDeposit && <span className="absolute bottom-1 text-[7.5px] text-emerald-700/80 font-bold block animate-pulse uppercase tracking-tight">🌿 мох</span>}
+                    <span className="text-base">{estate.icon}</span>
+                    <span className="text-[8.5px] block truncate w-full px-0.5">{estate.owner}</span>
+                    <span className="text-[7px] text-neutral-500 block leading-none font-mono">{estate.activeLock ? '🔒 Закр.' : '🍃 Откр.'}</span>
+                    <span className={`absolute top-1 right-1 w-1 h-1 rounded-full ${estate.hasDeposit ? 'bg-cyan-400' : 'bg-red-500'}`}></span>
+                  </button>
+                ))}
+              </div>
+              {selectedBoiarBuilding && <div className="p-2 bg-black/40 border border-slate-800 rounded-xl text-[10px] text-center text-slate-300 animate-fadeIn">🔮 Изменена суверенная межа владения №{selectedBoiarBuilding}.</div>}
+            </div>
+          )}
+
+          {/* ИНТЕРФЕЙС ИГРОВОГО СХОДА ДЛЯ ФОНА 7 (Мировое Вече) */}
+          {activeChat === 7 && (
+            <div className="w-full p-3 bg-black/20 border-b border-slate-700/20 flex flex-col gap-3 shrink-0 overflow-y-auto max-h-[160px] scrollbar-none animate-fadeIn font-mono select-none">
+              <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider block text-center">[🏛️ Вечевой Помост Свитков Мировых Вопросов]</span>
+              <div className="space-y-3 w-full">
+                {vecheProposals.map((prop) => (
+                  <div key={prop.id} className={`p-2 bg-black/40 border border-slate-800/80 rounded-xl flex flex-col gap-2 transition-all relative ${prop.isVetoActive ? 'border-red-600/50 bg-red-950/10' : ''}`}>
+                    <div className="flex justify-between items-start gap-4">
+                      <h4 className="text-[11px] font-semibold text-slate-200 leading-tight">{prop.title}</h4>
+                      <span className="text-xs font-bold text-cyan-400">{prop.quorum}%</span>
+                    </div>
+                    <div className="flex gap-2 justify-between items-center pt-1 border-t border-slate-900/40 text-[9px]">
+                      <div className="flex gap-3 text-slate-400">
+                        <span>🟢 Любо: <b className="text-emerald-400">{prop.votesLubor}</b></span>
+                        <span>🔴 Нелюбо: <b className="text-red-400">{prop.votesNelubor}</b></span>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => handleVecheVote(prop.id, 'LUBO')} className="px-2 py-0.5 bg-emerald-950/50 border border-emerald-700/50 text-emerald-400 font-bold rounded text-[8px] cursor-pointer">🟢 Любо</button>
+                        <button onClick={() => handleVecheVote(prop.id, 'NELUBO')} className={`px-2 py-0.5 border rounded text-[8px] font-black cursor-pointer ${prop.isVetoActive ? 'bg-red-950 border-red-500 text-red-400' : 'bg-red-950/40 border-red-900 text-red-400'}`}>🔴 Нелюбо</button>
+                      </div>
+                    </div>
+                    {prop.isVetoActive && <div className="text-[7.5px] font-bold text-red-400 text-center pt-1 animate-pulse uppercase">⚠️ Вето! Зарок Вепря требует заморозки 40 YNT!</div>}
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ИНТЕРФЕЙС ДЛЯ ФОНА 9 (Оракул Бабы Яги) */}
+          {activeChat === 9 && (
+            <div className="w-full p-3 bg-black/20 border-b border-slate-700/20 flex flex-col gap-2 shrink-0 font-mono select-none animate-fadeIn relative">
+              <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider block text-center">[🧪 Крио-Центр Оракула Бабы Яги]</span>
+              <div className="grid grid-cols-2 gap-3 w-full">
+                <button onClick={() => { setShowResetModal(true); setResetStep(1); }} className="p-2.5 bg-black/40 border border-slate-800 rounded-xl hover:border-emerald-500/40 transition-all flex flex-col items-center justify-center gap-1 text-center h-20 cursor-pointer">
+                  <span className="text-2xl animate-pulse">🏡</span>
+                  <span className="text-[9px] text-slate-200 block font-bold">Избушка Яги</span>
+                </button>
+                <button onClick={handleBirchSpringFlow} disabled={isSpringFlowing} className={`p-2.5 bg-black/40 border rounded-xl transition-all flex flex-col items-center justify-center gap-1 text-center h-20 cursor-pointer ${isSpringFlowing ? 'border-cyan-500' : 'border-slate-800'} ${isYagaUnlocked ? 'border-emerald-500/30' : ''}`}>
+                  <span className="text-2xl">{isSpringFlowing ? '🌊' : '🪵💧'}</span>
+                  <span className="text-[9px] text-cyan-400 block font-bold">{isYagaUnlocked ? 'Анлок Яги ✓' : 'Сжечь 1 YNT'}</span>
                 </button>
               </div>
 
-              {/* МОДАЛЬНЫЙ ПОШАГОВЫЙ ПУЛЬТ ОЧИСТКИ [UI_Yaga_Hard_Reset_Gate] */}
               {showResetModal && (
-                <div className="w-full bg-[#161a1d]/90 border border-slate-800/80 p-3 rounded-xl space-y-2.5 animate-fadeIn shadow-2xl relative z-20">
-                  <div className="flex justify-between items-center border-b border-slate-800 pb-1.5">
-                    <span className="text-[9px] font-bold text-emerald-400">🛠️ Пульт Reset Навьего Тела (ИИ-Оптимизатор Медведь)</span>
-                    <button onClick={() => { setShowResetModal(false); setResetStep(0); }} className="text-neutral-500 hover:text-white text-xs cursor-pointer">✕</button>
+                <div className="absolute inset-x-2 top-2 bg-[#161a1d]/95 border border-slate-800 p-3 rounded-xl space-y-2 z-40 shadow-2xl animate-fadeIn">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-1">
+                    <span className="text-[9px] font-bold text-emerald-400">🛠️ Пульт Reset (ИИ-Оптимизатор Медведь)</span>
+                    <button onClick={() => { setShowResetModal(false); setResetStep(0); }} className="text-neutral-500 text-xs">✕</button>
                   </div>
-
-                  {/* Шаг 1: Очистить Оперение сокола */}
                   {resetStep === 1 && (
-                    <div className="space-y-2 animate-fadeIn">
-                      <p className="text-[9.5px] text-slate-300">Шаг 1. <b>[🍃 Очистить Оперение сокола]</b> — Стирание картинок, медиа-кэша чатов и временных Web2-хвостов без потери Ключа-Истока.</p>
-                      <button onClick={() => setResetStep(2)} className="w-full py-1.5 bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-lg cursor-pointer transition-all active:scale-95 shadow-md">Выполнить Стирание Кэша</button>
+                    <div className="space-y-1.5">
+                      <p className="text-[8.5px] text-slate-300">Шаг 1. <b>[🍃 Очистить Оперение сокола]</b> — Стирание медиа-кэша без потери Ключа.</p>
+                      <button onClick={() => setResetStep(2)} className="w-full py-1 bg-emerald-800 text-white font-bold text-[9px] rounded cursor-pointer">Выполнить Стирание Кэша</button>
                     </div>
                   )}
-
-                  {/* Шаг 2: Переплавить Цепи портов */}
                   {resetStep === 2 && (
-                    <div className="space-y-2 animate-fadeIn">
-                      <p className="text-[9.5px] text-slate-300">Шаг 2. <b>[🌾 Переплавить Цепи портов]</b> — Принудительный сброс и перезапуск P2P сокет-соединений по портам 8027/8028 для пробития транзакций TURN-сервера.</p>
-                      <button onClick={() => setResetStep(3)} className="w-full py-1.5 bg-cyan-800 hover:bg-cyan-700 text-white font-bold text-[10px] rounded-lg cursor-pointer transition-all active:scale-95 shadow-md">Перезапустить P2P Сокеты</button>
+                    <div className="space-y-1.5">
+                      <p className="text-[8.5px] text-slate-300">Шаг 2. <b>[🌾 Переплавить Цепи портов]</b> — Перезапуск сокет-соединений по портам 8027/8028.</p>
+                      <button onClick={() => setResetStep(3)} className="w-full py-1 bg-cyan-800 text-white font-bold text-[9px] rounded cursor-pointer">Перезапустить P2P Сокеты</button>
                     </div>
                   )}
-
-                  {/* Шаг 3: Сжечь Морок (Полный Reset PocketDb) */}
                   {resetStep === 3 && (
-                    <div className="space-y-2 animate-fadeIn">
-                      <p className="text-[9.5px] text-red-400 font-bold">Шаг 3. ⚠️ [🔥 Сжечь Морок (Полный Reset)] — Тотальное удаление базы данных PocketDb/SQLite на устройстве. Возврат к Генезису!</p>
-                      <input 
-                        type="text"
-                        placeholder="Введите кодовую фразу Вечевого Оберега..."
-                        value={vechePassphrase}
-                        onChange={(e) => setVechePassphrase(e.target.value)}
-                        className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-[10px] text-amber-400 placeholder-neutral-600 focus:outline-none focus:border-red-500 font-mono"
-                      />
-                      <button 
-                        onClick={() => {
-                          if (vechePassphrase.trim().toLowerCase() === 'генезис') {
-                            alert("💥 МОРОК СОЖЖЁН! PocketDb стёрта. Клиент сброшен в исходный Генезис.");
-                            setShowResetModal(false);
-                            setResetStep(0);
-                            setVechePassphrase('');
-                          } else {
-                            alert("Отлуп Оракула: Неверная кодовая фраза Оберега! (Подсказка: введи слово 'генезис')");
-                          }
-                        }}
-                        className="w-full py-1.5 bg-gradient-to-r from-red-700 to-amber-700 text-white font-black text-[10px] rounded-lg cursor-pointer transition-all active:scale-95 shadow-md"
-                      >
-                        🔥 Испепелить Базу Ноды
-                      </button>
+                    <div className="space-y-1.5">
+                      <p className="text-[8.5px] text-red-400 font-bold">Шаг 3. ⚠️ [🔥 Сжечь Морок] — Удаление базы данных PocketDb. Введи 'генезис'.</p>
+                      <input type="text" placeholder="Введите фразу Оберега..." value={vechePassphrase} onChange={(e) => setVechePassphrase(e.target.value)} className="w-full bg-black border border-slate-800 rounded px-2 py-0.5 text-[9px] text-amber-400 focus:outline-none" />
+                      <button onClick={() => { if(vechePassphrase.toLowerCase()==='генезис'){ alert("💥 PocketDb стёрта."); setShowResetModal(false); setResetStep(0); setVechePassphrase(''); }else{ alert("Неверно!"); } }} className="w-full py-1 bg-gradient-to-r from-red-700 to-amber-700 text-white font-black text-[9px] rounded cursor-pointer">🔥 Ипепелить Базу</button>
                     </div>
                   )}
                 </div>
@@ -417,39 +463,11 @@ export default function IzbaComponent() {
             </div>
           )}
 
-          {/* ПОДДЕРЖКА ОСТАЛЬНЫХ ФОНОВ (4, 5, 6, 7, 3) */}
-          {activeChat !== 9 && (
-            <>
-              {activeChat === 4 && (
-                <div className="w-full bg-[#161a1d]/60 p-2.5 border-b border-slate-700/30 flex flex-col md:flex-row gap-3 items-center justify-between shrink-0 font-mono select-none animate-fadeIn">
-                  <div className="flex items-center gap-2 min-w-0"><span className="text-lg animate-pulse">🌿</span><div className="leading-tight min-w-0"><span className="text-[10px] text-emerald-400 font-bold block">[Лоза Артели Проросла]</span><span className="text-[8px] text-neutral-500 truncate block">Световой бартер active. Залог 40 YNT запечён.</span></div></div>
-                  <div className="flex items-center gap-2 bg-black/40 border border-slate-800 p-1.5 rounded-xl text-[10px] w-full md:max-w-xs justify-between">
-                    <div className="flex flex-col gap-0.5"><div className="flex gap-1 text-slate-300"><span>Сумма:</span><input type="number" value={dealAmount} onChange={(e) => setDealAmount(e.target.value)} className="w-12 bg-transparent border-b border-slate-700 text-emerald-400 focus:outline-none text-center font-bold font-mono" /></div><span className="text-[8px] text-amber-500 font-bold">🍎 Tax 27%: +{appleTax} YNT</span></div>
-                    <div className="w-px h-6 bg-slate-800"></div><div className="text-right leading-tight"><span className="text-[7.5px] text-neutral-500 block uppercase">Выход в Пул</span><span className="text-xs font-bold text-slate-200">{totalWithTax} YNT</span></div>
-                    <button onClick={() => alert(`Транзакция запечена: ${totalWithTax} YNT.`)} className="px-2.5 py-1 bg-emerald-700 text-white text-[9px] font-bold rounded-lg cursor-pointer">💸 Оплатить</button>
-                  </div>
-                </div>
-              )}
-              {activeChat === 5 && vesselAccessLevel === 'CLOSED' && (
-                <div className="w-full bg-amber-950/20 p-2.5 border-b border-amber-900/30 flex flex-col md:flex-row gap-3 items-center justify-between shrink-0 font-mono select-none animate-fadeIn">
-                  <div className="w-full md:max-w-xs space-y-1"><div className="flex justify-between text-[8px] font-bold text-amber-500 uppercase"><span>⚡ Вечевой Пульс Бунта против Управляющего</span><span>{rebellionPulse}%</span></div><div className="w-full bg-black/40 border border-slate-800 h-1.5 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-amber-600 to-red-600" style={{ width: `${rebellionPulse}%` }}></div></div></div>
-                  <div className="flex items-center gap-1.5"><span className="text-[8px] text-neutral-500 uppercase font-bold">Вето Бояр:</span><div className="flex gap-1">{boiarSignatures.map((signed, idx) => ( <button key={idx} onClick={() => { const updated = [...boiarSignatures]; updated[idx] = !updated[idx]; setBoiarSignatures(updated); setRebellionPulse(updated.filter(Boolean).length * 25 + 20); }} className={`w-5 h-5 rounded border text-[8px] font-bold flex items-center justify-center cursor-pointer ${signed ? 'bg-red-900/40 border-red-500 text-red-400' : 'bg-slate-900 border-slate-800 text-neutral-600'}`}>{signed ? '🔒' : '✍️'}</button> )) }</div></div>
-                </div>
-              )}
-              {activeChat === 6 && (
-                <div className="w-full p-2.5 bg-black/10 border-b border-slate-800/40 select-none text-center font-mono text-[9px] text-neutral-400 animate-fadeIn">[Генеральный План построек сопредельных Бояр взведён в фоне]</div>
-              )}
-              {activeChat === 7 && (
-                <div className="w-full p-2.5 bg-black/10 border-b border-slate-800/40 select-none text-center font-mono text-[9px] text-neutral-400 animate-fadeIn">[Вечевой Помост Свитков Мировых Вопросов Парламента активен в фоне]</div>
-              )}
-            </>
-          )}
-
           {/* Лента сообщений чата */}
           <div className="flex-1 p-4 overflow-y-auto space-y-3 scrollbar-none flex flex-col justify-end bg-black/5">
             {displayMessages.map((msg) => (
               <div key={msg.id} className={`flex flex-col max-w-[70%] leading-snug animate-fadeIn ${msg.isMe ? 'self-end items-end' : 'self-start items-start'}`}>
-                {!msg.isMe && <span className="text-[9px] font-semibold text-emerald-400 mb-0.5 ml-1 font-mono">{msg.sender} {activeChat === 3 && `[${msg.tag}]`}</span>}
+                {!msg.isMe && <span className="text-[9px] font-semibold text-emerald-400 mb-0.5 ml-1 font-mono">{msg.sender}</span>}
                 <div className={`p-2.5 rounded-2xl border text-xs shadow-md break-words relative ${msg.tag === 'SYSTEM' ? 'border-amber-400 bg-amber-950/20 text-amber-200' : ''} ${msg.tag !== 'SYSTEM' && msg.isMe ? 'bg-gradient-to-r from-emerald-900/50 to-emerald-950/50 border-emerald-800/30 text-slate-100 rounded-br-sm' : msg.tag !== 'SYSTEM' ? 'bg-[#161a1d]/80 border-slate-800/60 text-slate-200 rounded-bl-sm' : ''}`}>
                   <p>{msg.text}</p>
                   <div className="flex items-center justify-end gap-1 mt-1 text-[8px] font-mono text-neutral-500 leading-none">
