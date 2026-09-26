@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 // [UI_Vessel_Izba_Core] + [UI_Chests_View_Core]
-// Двухпанельный ПК-интерфейс чата "Синий Вестник" (Фон 2) с Сквозным Пультом
+// Изба (Фон 2) — Двухпанельный хай-тек мессенджер Синего Вестника с интерактивным P2P-поиском
 export default function IzbaComponent() {
   // 7 Истинных Балансов Казны (Укрупнённый text-sm контур)
   const [balances] = useState({
@@ -16,36 +16,76 @@ export default function IzbaComponent() {
 
   const totalGodsRays = balances.pathVeles + balances.pathPerun + balances.pathSvarog;
 
+  // Интерактивное состояние P2P поиска по именам и ID локаций
+  const [searchQuery, setSearchText] = useState('');
+
   // Валидированная Матрица Фонов Портала по ТЗ
   const chatDatabase = [
-    { id: 1, name: 'Родовая Поляна Чертога', type: 'Главный Экран', chatId: 'chertog_meadow_main', icon: '🌳', unread: 0 },
-    { id: 2, name: 'Изба (Приватный чат)', type: 'Семейный Круг', chatId: 'izba_private_chat', icon: '🏡', unread: 0 },
-    { id: 3, name: 'Простой Терем', type: 'Камерное Сообщество', chatId: 'prostoy_terem_community', icon: '🪵', unread: 3 },
-    { id: 4, name: 'Терем-Артель', type: 'Рабочая Мастерская', chatId: 'terem_artel_workshop', icon: '🔨', unread: 12 },
-    { id: 5, name: 'Вечевая Палата', type: 'Локальный Форум', chatId: 'veche_palata_forum', icon: '🏛️', unread: 7 },
-    { id: 6, name: 'Княжеский Двор', type: 'Супер-Сообщество', chatId: 'kniaz_dvor_super_community', icon: '👑', unread: 0 },
-    { id: 7, name: 'Глобальное Вече Царства', type: 'Главная Площадь', chatId: 'global_veche_square', icon: '🔔', unread: 42 },
-    { id: 8, name: 'Торговый Вырий', type: 'Глобальная Ярмарка', chatId: 'torgoviy_vyriy_market', icon: '💎', unread: 1 }
+    { id: 1, name: 'Родовая Поляна Чертога', type: 'Главный Экран', chatId: 'chertog_meadow_main', icon: '🌳', unread: 0, status: 'в сети' },
+    { id: 2, name: 'Изба (Приватный чат)', type: 'Семейный Круг', chatId: 'izba_private_chat', icon: '🏡', unread: 0, status: 'в сети' },
+    { id: 3, name: 'Простой Терем', type: 'Камерное Сообщество', chatId: 'prostoy_terem_community', icon: '🪵', unread: 3, status: 'был в сети 27 мин назад' },
+    { id: 4, name: 'Терем-Артель', type: 'Рабочая Мастерская', chatId: 'terem_artel_workshop', icon: '🔨', unread: 12, status: 'в сети' },
+    { id: 5, name: 'Вечевая Палата', type: 'Локальный Форум', chatId: 'veche_palata_forum', icon: '🏛️', unread: 7, status: 'онлайн-вече' },
+    { id: 6, name: 'Княжеский Двор', type: 'Супер-Сообщество', chatId: 'kniaz_dvor_super_community', icon: '👑', unread: 0, status: 'был в сети вчера' },
+    { id: 7, name: 'Глобальное Вече Царства', type: 'Главная Площадь', chatId: 'global_veche_square', icon: '🔔', unread: 42, status: '950 Бояр на помосте' },
+    { id: 8, name: 'Торговый Вырий', type: 'Глобальная Ярмарка', chatId: 'torgoviy_vyriy_market', icon: '💎', unread: 1, status: 'P2P-торги открыты' }
   ];
 
   const [activeChat, setActiveChat] = useState(2); // Изба активна по умолчанию
-  const [messages, setMessages] = useState([
-    { id: 1, sender: 'Ладослава', text: 'Добро войти в наш семейный Круг, соратник! Ключ Ed25519 взведён ладно.', time: '12:34', isMe: false },
-    { id: 2, sender: 'Вы', text: 'Здравствуй! Думы пишутся на бересте чисто. Проверяю сокет-мост.', time: '12:36', isMe: true }
-  ]);
   const [inputText, setInputText] = useState('');
+
+  // База данных Берестяной Почты: Уникальные ЛОРные переписки под каждую комнату Портала
+  const [mailRepository, setMailRepository] = useState<{ [key: number]: Array<{ id: number; sender: string; text: string; time: string; isMe: boolean }> }>({
+    1: [
+      { id: 101, sender: 'Ведун', text: 'Добро пожаловать на твою Родовую Поляну. Древо Чертога пустило глубокие корни в блокчейн.', time: '08:00', isMe: false }
+    ],
+    2: [
+      { id: 201, sender: 'Ладослава', text: 'Добро войти в наш семейный Круг, соратник! Ключ Ed25519 взведён ладно.', time: '12:34', isMe: false },
+      { id: 202, sender: 'Вы', text: 'Здравствуй! Думы пишутся на бересте чисто. Проверяю сокет-мост.', time: '12:36', isMe: true }
+    ],
+    3: [
+      { id: 301, sender: 'Хранитель Терема', text: 'Камерный круг в сборе. Лимит в 27 участников не превышен, чужаков в ноде нет.', time: '15:20', isMe: false }
+    ],
+    4: [
+      { id: 401, sender: 'Мастер Ратибор', text: 'Чертежи инди-ремесла для Ступени 2 готовы. Проверяем смарт-контракты.', time: '10:15', isMe: false }
+    ],
+    5: [
+      { id: 501, sender: 'Старейшина', text: 'Локальный спор объявляю открытым! Активируйте Зеркальца для фиксации дум.', time: '17:40', isMe: false }
+    ],
+    6: [
+      { id: 601, sender: 'Князь', text: 'Артель и Палата успешно объединены в супер-сообщество. Владения под защитой.', time: 'Вчера', isMe: false }
+    ],
+    7: [
+      { id: 701, sender: 'Смарт-Контракт Вече', text: 'Голосование за изменение Конов запущено. Результаты будут запечены на Закате.', time: '19:00', isMe: false }
+    ],
+    8: [
+      { id: 801, sender: 'Лавка Ремесла', text: 'Выставлен новый ордер на обмен Лучиков на Янтарь YNT. Комиссия APPLE_TAX учтена.', time: '19:42', isMe: false }
+    ]
+  });
+
+  const currentMessages = mailRepository[activeChat] || [];
 
   const handleSendMessage = () => {
     if (!inputText.trim()) return;
-    setMessages([...messages, {
+    const newMsg = {
       id: Date.now(),
       sender: 'Вы',
       text: inputText,
       time: '19:50',
       isMe: true
-    }]);
+    };
+    setMailRepository({
+      ...mailRepository,
+      [activeChat]: [...currentMessages, newMsg]
+    });
     setInputText('');
   };
+
+  // Живая P2P-фильтрация списка чатов на основе ввода в поле поиска
+  const filteredChats = chatDatabase.filter(chat => 
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    chat.chatId.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="w-full h-full flex flex-col justify-between font-sans antialiased text-slate-200">
@@ -75,7 +115,7 @@ export default function IzbaComponent() {
             </div>
           </div>
 
-          {/* Тропы Богов (Фиксированный плоский заголовок без вылетов) */}
+          {/* Тропы Богов */}
           <div className="flex flex-col items-center justify-center shrink-0 bg-[#161a1d]/60 border border-slate-700/50 px-3 py-1 rounded-lg min-w-[210px]">
             <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block text-center leading-none mb-1 select-none font-semibold">
               Тропы Богов: <span className="text-sm font-mono text-emerald-300 font-black">{totalGodsRays}</span>
@@ -103,13 +143,23 @@ export default function IzbaComponent() {
       {/* ГЛАВНЫЙ ДВУХПАНЕЛЬНЫЙ ДИЗАЙН МЕССЕНДЖЕРА (Синий Вестник) */}
       <div className="flex-1 flex flex-row w-full max-w-[1152px] mx-auto gap-4 items-stretch overflow-hidden h-[calc(100vh-140px)]">
         
-        {/* ЛЕВАЯ ПАНЕЛЬ: Список чатов на основе Матрицы Фонов ТЗ */}
-        <div className="w-[320px] shrink-0 bg-[#1e2326]/60 border border-slate-700/40 rounded-2xl p-3 flex flex-col gap-2 overflow-y-auto scrollbar-none shadow-md">
-          <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-1 px-1">
-            Локации Портала (Чаты)
-          </span>
-          <div className="space-y-1.5">
-            {chatDatabase.map((chat) => (
+        {/* ЛЕВАЯ ПАНЕЛЬ: Интерактивный Поиск и Список чатов */}
+        <div className="w-[320px] shrink-0 bg-[#1e2326]/60 border border-slate-700/40 rounded-2xl p-3 flex flex-col gap-2 overflow-hidden shadow-md">
+          
+          {/* Интерактивная строка поиска контактов/чатов */}
+          <div className="w-full relative shrink-0">
+            <input 
+              type="text"
+              placeholder="🔍 Найти Избу или Терем по ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="w-full bg-[#161a1d]/80 border border-slate-700/40 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-200 placeholder-neutral-500 focus:border-emerald-500/40 focus:outline-none transition-all shadow-inner font-mono"
+            />
+            <span className="absolute left-2.5 top-2 text-xs opacity-40 select-none"></span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-1.5 scrollbar-none pr-0.5 mt-1">
+            {filteredChats.map((chat) => (
               <button
                 key={chat.id}
                 onClick={() => setActiveChat(chat.id)}
@@ -119,7 +169,6 @@ export default function IzbaComponent() {
                     : 'bg-[#161a1d]/40 border-transparent hover:bg-slate-800/20'}`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  {/* Матовая круглая аватарка чата */}
                   <div className="w-9 h-9 rounded-full bg-[#161a1d] border border-slate-700/50 flex items-center justify-center text-base shrink-0 shadow-sm">
                     {chat.icon}
                   </div>
@@ -128,7 +177,6 @@ export default function IzbaComponent() {
                     <span className="text-[9px] font-mono text-neutral-500 block truncate mt-0.5">ID: {chat.chatId}</span>
                   </div>
                 </div>
-                {/* Счетчик непрочитанных */}
                 {chat.unread > 0 && (
                   <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-emerald-600 text-white rounded-full shrink-0 shadow-sm">
                     {chat.unread}
@@ -136,30 +184,38 @@ export default function IzbaComponent() {
                 )}
               </button>
             ))}
+            {filteredChats.length === 0 && (
+              <div className="text-center text-[11px] text-neutral-600 font-mono py-8 italic select-none">
+                Чертоги не найдены... 🪵
+              </div>
+            )}
           </div>
         </div>
 
-        {/* ПРАВАЯ ПАНЕЛЬ: Окно активной переписки */}
+        {/* ПРАВАЯ ПАНЕЛЬ: Окно активной переписки с Берестяной Почтой */}
         <div className="flex-1 bg-[#1e2326]/60 border border-slate-700/40 rounded-2xl flex flex-col overflow-hidden shadow-xl">
-          {/* Шапка текущего чата */}
-          <div className="p-3 border-b border-slate-700/40 bg-black/10 flex items-center justify-between shrink-0">
+          
+          {/* ИНДИКАТОР СТАТУСА СЕТИ В ШАПКЕ ЧАТА (Строка «в сети» и т.д. буква в букву) */}
+          <div className="p-3 border-b border-slate-700/40 bg-black/10 flex items-center justify-between shrink-0 select-none">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-[#161a1d] border border-slate-700/50 flex items-center justify-center text-sm shadow-sm">
                 {chatDatabase[activeChat - 1].icon}
               </div>
               <div className="leading-tight">
                 <h3 className="text-xs font-semibold text-slate-200">{chatDatabase[activeChat - 1].name}</h3>
-                <span className="text-[9px] font-mono text-emerald-500">{chatDatabase[activeChat - 1].type}</span>
+                <span className="text-[10px] font-mono font-medium text-emerald-400 block mt-0.5 animate-pulse">
+                  ● {chatDatabase[activeChat - 1].status}
+                </span>
               </div>
             </div>
-            <span className="text-[9px] font-mono text-neutral-500 px-2 py-0.5 bg-neutral-950/30 rounded-lg">
+            <span className="text-[9px] font-mono text-neutral-500 px-2 py-0.5 bg-neutral-950/30 rounded-lg select-all">
               id: {chatDatabase[activeChat - 1].chatId}
             </span>
           </div>
 
           {/* Зона летящих сообщений чата */}
           <div className="flex-1 p-4 overflow-y-auto space-y-3 scrollbar-none flex flex-col justify-end bg-black/5">
-            {messages.map((msg) => (
+            {currentMessages.map((msg) => (
               <div 
                 key={msg.id} 
                 className={`flex flex-col max-w-[70%] leading-snug animate-fadeIn
@@ -168,7 +224,6 @@ export default function IzbaComponent() {
                 {!msg.isMe && (
                   <span className="text-[9px] font-semibold text-emerald-400 mb-0.5 ml-1 font-mono">{msg.sender}</span>
                 )}
-                {/* Облачко сообщения */}
                 <div 
                   className={`p-2.5 rounded-2xl border text-xs shadow-md break-words relative group
                     ${msg.isMe 
@@ -176,7 +231,6 @@ export default function IzbaComponent() {
                       : 'bg-[#161a1d]/80 border-slate-800/60 text-slate-200 rounded-bl-sm'}`}
                 >
                   <p>{msg.text}</p>
-                  {/* Подвал внутри облачка времени и галочек */}
                   <div className="flex items-center justify-end gap-1 mt-1 text-[8px] font-mono text-neutral-500 leading-none">
                     <span>{msg.time}</span>
                     {msg.isMe && (
@@ -196,7 +250,7 @@ export default function IzbaComponent() {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              className="flex-1 bg-[#161a1d]/60 border border-slate-700/40 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-neutral-500 focus:border-emerald-500/40 focus:outline-none transition-all shadow-inner"
+              className="flex-1 bg-[#161a1d]/60 border border-slate-700/40 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-neutral-500 focus:border-emerald-500/40 focus:outline-none transition-all shadow-inner font-mono"
             />
             <button 
               onClick={handleSendMessage}
