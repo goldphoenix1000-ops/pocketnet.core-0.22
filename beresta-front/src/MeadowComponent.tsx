@@ -1,22 +1,54 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-// [UI_Chests_View_Core] + [UI_Mirror_Global_Container]
-// Родовая Поляна (Фон 1) с ультимативным Сквозным Пультом на 7 Балансов и валидированной Матрицей Фонов
-export default function MeadowComponent() {
-  // 7 Истинных Балансов Казны (Пункт №1 ТЗ)
+// [Chislobog_Trees_Matrix] + [UI_Chests_View_Core]
+// Родовая Поляна (Фон 1) с чистыми системными иконками Древ 🌳 и правильной ЛОР-иерархией
+interface MeadowProps {
+  activeChertogId?: number;
+  onChertogChange?: (id: number) => void;
+  currentBackground?: number;
+}
+
+export default function MeadowComponent({ 
+  activeChertogId: externalChertogId, 
+  onChertogChange,
+  currentBackground: externalBg 
+}: MeadowProps) {
+  
+  // Истинный ЛОР-реестр 16 Чертогов. Все иконки заменены на системные Древа 🌳 по ТЗ
+  const chertogMatrix = [
+    { id: 1, name: 'Чертог Вепря', icon: '🌳', tree: 'Груша Истока', god: 'Рамхатъ', code: 'Tree_ID_01' },
+    { id: 2, name: 'Чертог Щуки', icon: '🌳', tree: 'Священная Слива', god: 'Рожана', code: 'Tree_ID_02' },
+    { id: 3, name: 'Чертог Белого Лебедя', icon: '🌳', tree: 'Священная Берёза', god: 'Макошь', code: 'Tree_ID_03' },
+    { id: 4, name: 'Чертог Змия', icon: '🌳', tree: 'Священная Липа', god: 'Семаргл', code: 'Tree_ID_04' },
+    { id: 5, name: 'Чертог Варуны', icon: '🌳', tree: 'Священная Лиственница', god: 'Коляда', code: 'Tree_ID_05' },
+    { id: 6, name: 'Чертог Медведя', icon: '🌳', tree: 'Священный Букъ', god: 'Сварог', code: 'Tree_ID_06' },
+    { id: 7, name: 'Чертог Бусла', icon: '🌳', tree: 'Священная Ивая', god: 'Род', code: 'Tree_ID_07' },
+    { id: 8, name: 'Чертог Волка', icon: '🌳', tree: 'Священный Тополь', god: 'Велес', code: 'Tree_ID_08' },
+    { id: 9, name: 'Чертог Лисы', icon: '🌳', tree: 'Священный Грабъ', god: 'Марена (Мара)', code: 'Tree_ID_09' },
+    { id: 10, name: 'Чертог Тура', icon: '🌳', tree: 'Священная Осина', god: 'Крышень', code: 'Tree_ID_10' },
+    { id: 11, name: 'Чертог Лося', icon: '🌳', tree: 'Священная Берёза', god: 'Лада', code: 'Tree_ID_11' },
+    { id: 12, name: 'Чертог Финиста', icon: '🌳', tree: 'Священная Вишня', god: 'Вышень', code: 'Tree_ID_12' },
+    { id: 13, name: 'Чертог Коня', icon: '🌳', tree: 'Священный Вяз', god: 'Купала', code: 'Tree_ID_13' },
+    { id: 14, name: 'Чертог Орла', icon: '🌳', tree: 'Священный Дубъ', god: 'Перун', code: 'Tree_ID_14' },
+    { id: 15, name: 'Чертог Раса', icon: '🌳', tree: 'Священный Ясень', god: 'Тархъ (Даждьбог)', code: 'Tree_ID_15' },
+    { id: 16, name: 'Чертог Девы', icon: '🌳', tree: 'Священная Яблоня', god: 'Джива', code: 'Tree_ID_16' }
+  ];
+
+  const [internalChertogId, setInternalChertogId] = useState(1);
+  const chertogId = externalChertogId !== undefined ? externalChertogId : internalChertogId;
+
   const [balances] = useState({
-    yntPersonal: '1,250.00', // Личный Ларец (YNT)
-    yntDeposit: '40.00',     // Ларец Места (Залог)
-    rayLight: '12 / 24',     // Искорки Зари (Лучики Света)
-    pathVeles: 450,          // Тропа Велеса
-    pathPerun: 120,          // Тропа Перуна (Синяя молния)
-    pathSvarog: 380,         // Тропа Сварога
-    vecheLock: 'Взведён'     // Вечевой Залог
+    yntPersonal: '1,250.00',
+    yntDeposit: '40.00',
+    rayLight: '12 / 24',
+    pathVeles: 450,
+    pathPerun: 120, // Синяя молния ⚡
+    pathSvarog: 380,
+    vecheLock: 'Взведён'
   });
 
   const totalGodsRays = balances.pathVeles + balances.pathPerun + balances.pathSvarog;
 
-  // Валидированная база данных Матрицы Фонов Портала и системных идентификаторов
   const chatDatabase: { [key: number]: { name: string; id: string } } = {
     1: { name: 'Родовая Поляна Чертога (Главный Экран)', id: 'chertog_meadow_main' },
     2: { name: 'Изба (Приватный чат)', id: 'izba_private_chat' },
@@ -28,33 +60,31 @@ export default function MeadowComponent() {
     8: { name: 'Торговый Вырий (Глобальная Ярмарка)', id: 'torgoviy_vyriy_market' }
   };
 
-  // Настройки видимости Пульта на всех 8 Фонах
   const [visibleOnPhones, setVisibleOnPhones] = useState<{ [key: number]: boolean }>({
-    1: true, 2: true, 3: false, 4: true, 5: false, 6: false, 7: true, 8: true
+    1: true, 2: true, 3: false, 4: true, 5: false, 6: false, 7: false, 8: true
   });
 
-  const [currentBackground, setCurrentBackground] = useState(1);
+  const [internalBg, setInternalBg] = useState(1);
+  const currentBackground = externalBg !== undefined ? externalBg : internalBg;
+  
   const [showSettings, setShowSettings] = useState(false);
-  const [activeChertogId, setActiveChertogId] = useState(1);
-
   const settingsRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Автоматическое закрытие меню при клике вне его области
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        settingsRef.current && 
-        !settingsRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node) && buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         setShowSettings(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleChertogClick = (id: number) => {
+    if (onChertogChange) onChertogChange(id);
+    else setInternalChertogId(id);
+  };
 
   const toggleBackgroundVisibility = (id: number) => {
     setVisibleOnPhones({ ...visibleOnPhones, [id]: !visibleOnPhones[id] });
@@ -63,13 +93,10 @@ export default function MeadowComponent() {
   return (
     <div className="min-h-screen bg-[#161a1d] text-slate-200 font-sans antialiased relative overflow-hidden p-4 md:p-6 flex flex-col justify-between">
       
-      {/* СЛОЙ 1. Сквозной Монолитный Пульт 7 Балансов */}
+      {/* СЛОЙ 1. Сквозной Пульт Балансов */}
       {visibleOnPhones[currentBackground] ? (
-        <div className="w-full max-w-[1152px] mx-auto bg-gradient-to-r from-emerald-800/40 to-slate-800/70 border border-slate-700/40 rounded-xl p-1.5 pr-8 pb-2.5 pt-2.5 mb-6 shadow-xl transition-all duration-300 relative">
-          
-          <div className="flex flex-row items-center gap-4 overflow-x-auto scrollbar-none justify-start md:justify-between w-full">
-            
-            {/* Блок I. Янтарный Капитал */}
+        <div className="w-full max-w-[1152px] mx-auto bg-gradient-to-r from-emerald-800/40 to-slate-800/70 border border-slate-700/40 rounded-xl p-1.5 pr-8 pb-2.5 pt-2.5 mb-6 shadow-xl transition-all duration-300 relative z-30">
+          <div className="flex flex-row items-center gap-2.5 overflow-x-auto scrollbar-none justify-start md:justify-between w-full">
             <div className="flex items-center gap-3 shrink-0 bg-[#161a1d]/60 border border-slate-700/50 px-4 py-2 rounded-lg">
               <div className="text-center">
                 <span className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider leading-none mb-1">Личный Ларец</span>
@@ -81,90 +108,127 @@ export default function MeadowComponent() {
                 <span className="text-sm font-mono font-medium text-slate-200">🪵 {balances.yntDeposit}</span>
               </div>
             </div>
-
-            {/* Блок II. Живое Время */}
             <div className="flex items-center shrink-0 bg-[#161a1d]/60 border border-slate-700/50 px-4 py-2 rounded-lg text-center">
               <div>
                 <span className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider leading-none mb-1">Искорки Зари</span>
                 <span className="text-sm font-mono font-medium text-cyan-400">🌅 {balances.rayLight}</span>
               </div>
             </div>
-
-            {/* Блок III. Триада Троп Богов */}
-            <div className="flex flex-col items-center justify-center shrink-0 bg-[#161a1d]/60 border border-slate-700/50 px-4 py-2 rounded-lg min-w-[210px]">
+            <div className="flex flex-col items-center justify-center shrink-0 bg-[#161a1d]/60 border border-slate-700/50 px-4 py-1 rounded-lg min-w-[210px]">
               <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block text-center leading-none mb-1.5 select-none font-semibold">
                 Тропы Богов: <span className="text-sm font-mono text-emerald-300 font-black">{totalGodsRays}</span>
               </div>
               <div className="flex items-center gap-3.5 w-full justify-center">
-                <div className="text-center">
-                  <span className="text-sm font-mono font-medium text-amber-500">🌾 {balances.pathVeles}</span>
-                </div>
+                <span className="text-sm font-mono font-medium text-amber-500">🌾 {balances.pathVeles}</span>
                 <div className="w-px h-3 bg-slate-700/40"></div>
-                <div className="text-center">
-                  <span className="text-sm font-mono font-medium text-sky-400">⚡ {balances.pathPerun}</span>
-                </div>
+                <span className="text-sm font-mono font-medium text-sky-400">⚡ {balances.pathPerun}</span>
                 <div className="w-px h-3 bg-slate-700/40"></div>
-                <div className="text-center">
-                  <span className="text-sm font-mono font-medium text-sky-300">☀️ {balances.pathSvarog}</span>
-                </div>
+                <span className="text-sm font-mono font-medium text-sky-300">☀️ {balances.pathSvarog}</span>
               </div>
             </div>
-
-            {/* Блок IV. Вечевой Затвор */}
             <div className="flex items-center shrink-0 bg-[#161a1d]/60 border border-slate-700/50 px-4 py-2 rounded-lg text-center">
               <div>
                 <span className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider leading-none mb-1">Вечевой Залог</span>
                 <span className="text-sm font-mono font-medium text-emerald-500">🔒 {balances.vecheLock}</span>
               </div>
             </div>
-
           </div>
-
-          <button 
-            ref={buttonRef}
-            onClick={() => setShowSettings(!showSettings)} 
-            className="absolute bottom-1 right-2 text-xs text-slate-500 hover:text-emerald-400 transition-colors p-0.5 select-none focus:outline-none z-40"
-          >
-            ⚙️
-          </button>
+          <button ref={buttonRef} onClick={() => setShowSettings(!showSettings)} className="absolute bottom-1 right-2 text-xs text-slate-500 hover:text-emerald-400 transition-colors p-0.5 select-none focus:outline-none z-40">⚙️</button>
         </div>
       ) : (
-        <div className="w-full max-w-[1152px] mx-auto text-right mb-2 relative h-4">
+        <div className="w-full max-w-[1152px] mx-auto text-right mb-2 relative h-4 z-30">
           <button ref={buttonRef} onClick={() => setShowSettings(!showSettings)} className="absolute right-2 top-0 text-xs text-neutral-600 hover:text-emerald-400 select-none focus:outline-none z-40">⚙️</button>
         </div>
       )}
 
-      {/* ДИНАМИЧЕСКИЙ ЦЕНТР ЭКРАНА */}
-      <div className="flex-1 flex flex-col items-center justify-center my-auto relative select-none">
-        <div className="text-center mb-4">
-          <span className="text-xs text-emerald-500 font-mono tracking-widest uppercase block mb-1 font-semibold">Фон {currentBackground}</span>
-          <h2 className="text-xl font-medium text-slate-200 font-serif tracking-wide transition-all duration-300">
-            {chatDatabase[currentBackground].name}
-          </h2>
-          <p className="text-[10px] text-neutral-500 font-mono italic mt-1 break-all bg-neutral-950/30 border border-slate-800/20 px-2.5 py-0.5 rounded-lg select-all">
-            ID: {chatDatabase[currentBackground].id}
-          </p>
-          <p className="text-[10px] text-neutral-600 font-medium tracking-wider mt-1">Текущий Chertog_ID: {activeChertogId}</p>
-        </div>
-      </div>
-
-      {/* ОЧАГ И ДРОВА ОПУЩЕНЫ НА ЗЕМЛЮ (В самый низ экрана mt-auto mb-4) */}
-      <div className="w-full flex flex-col items-center justify-end mt-auto mb-4 relative z-10 select-none">
-        <div className="relative w-36 h-28 flex items-center justify-center">
-          {/* Пульсирующий изумрудно-дымчатый ореол света (Анимация дыхания пламени) */}
-          <div className="absolute inset-0 rounded-full bg-emerald-500/10 blur-xl animate-pulse duration-[4000ms] ease-in-out scale-110"></div>
-          <div className="absolute w-20 h-20 rounded-full bg-cyan-500/5 blur-lg animate-ping duration-[6000ms] opacity-30"></div>
-          
-          {/* Графический очаг костра прижат книзу */}
-          <div className="z-10 text-5xl filter drop-shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-bounce duration-[2500ms] cursor-pointer mb-2" onClick={() => alert("Костёр разгорается сильнее!")}>
-            🔥
+      {/* ГЛАВНЫЙ АДАПТИВНЫЙ ГРИД: Левый ряд Оживлённых Чертогов Числобога */}
+      <div className="flex-1 flex flex-col md:flex-row w-full max-w-[1152px] mx-auto gap-4 items-stretch overflow-hidden mt-2 relative z-20">
+        
+        {/* ЛЕВАЯ ПАНЕЛЬ: 16 Чертогов Круголета и Родовых Древ (Ширина строго 64px, иконки строго 🌳) */}
+        <div className="w-full md:w-[64px] shrink-0 bg-[#1e2326]/60 border border-slate-700/40 rounded-xl p-1.5 flex flex-col items-center justify-start overflow-x-auto md:overflow-y-auto md:max-h-[calc(100vh-180px)] scrollbar-none shadow-md">
+          <div className="flex flex-col text-[7.5px] text-slate-400 font-mono mb-1 uppercase tracking-wider items-center justify-center w-full leading-none select-none shrink-0 text-center">
+            <span className="block w-full">16</span>
+            <span className="block w-full mt-0.5">Древ</span>
           </div>
-          {/* Бревна очага на самой земле */}
-          <div className="absolute bottom-1 z-0 text-2xl">🪵</div>
+          
+          {/* Вертикальный адаптивный контейнер кнопок-Чертогов 01-16 */}
+          <div className="flex flex-row md:flex-col gap-1 items-center w-full justify-start overflow-x-auto md:overflow-x-visible scrollbar-none">
+            {chertogMatrix.map((chertog) => (
+              <button
+                key={chertog.id}
+                onClick={() => handleChertogClick(chertog.id)}
+                title={`${chertog.name} (Древо: ${chertog.tree}, Покровитель: ${chertog.god})`}
+                className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center border transition-all relative cursor-pointer shrink-0 shadow-sm
+                  ${chertogId === chertog.id 
+                    ? 'bg-gradient-to-b from-emerald-900/50 to-slate-800/40 border-emerald-500/50 font-bold text-emerald-400 scale-95 shadow-inner' 
+                    : 'bg-[#161a1d]/60 border-slate-800 hover:border-slate-600 text-slate-400'}`}
+              >
+                <span className="text-[11px] leading-none">{chertog.icon}</span>
+                <span className="text-[7.5px] font-mono leading-none mt-0.5 select-none">
+                  {chertog.id < 10 ? `0${chertog.id}` : chertog.id}
+                </span>
+                {chertogId === chertog.id && (
+                  <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ЦЕНТРАЛЬНАЯ ЗОНА: Интерактивный Холст Поляны со сквозными ЛОР-данными Чертога */}
+        <div className="flex-1 bg-[#1e2326]/30 border border-slate-700/20 rounded-2xl p-4 flex flex-col justify-between overflow-hidden shadow-inner relative">
+          
+          {/* Шапка локации с динамическими метаданными из ТЗ */}
+          <div className="text-center w-full mt-2 select-none z-10">
+            <span className="text-[10px] text-emerald-500 font-mono tracking-widest uppercase block mb-0.5 font-semibold">
+              Фон {currentBackground}
+            </span>
+            <h2 className="text-lg font-medium text-slate-200 font-serif tracking-wide transition-all duration-300">
+              {chatDatabase[currentBackground] ? chatDatabase[currentBackground].name : 'Портал Синяя Береста'}
+            </h2>
+            <p className="text-[9px] text-neutral-500 font-mono italic mt-0.5 max-w-xs mx-auto truncate bg-neutral-950/20 px-2 py-0.5 rounded border border-slate-800/30 select-all">
+              ID: {chatDatabase[currentBackground] ? chatDatabase[currentBackground].id : 'unknown_node'}
+            </p>
+          </div>
+
+          {/* Карточка ЛОР-данных Чертога по твоей Истинной Матрице */}
+          <div className="w-full max-w-sm mx-auto bg-[#161a1d]/80 border border-slate-700/40 rounded-xl p-3 text-center space-y-1 z-10 shadow-lg font-mono animate-fadeIn mt-4">
+            <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider block">
+              [{chertogMatrix[chertogId - 1].code}]
+            </span>
+            <h3 className="text-xs font-bold text-emerald-400 font-serif">
+              {chertogMatrix[chertogId - 1].name} (№{chertogId < 10 ? `0${chertogId}` : chertogId})
+            </h3>
+            <div className="grid grid-cols-2 gap-2 text-[10px] pt-1 border-t border-slate-800/60 text-slate-300">
+              <div className="bg-black/20 p-1.5 rounded border border-slate-800/30">
+                <span className="text-neutral-500 block text-[8px] uppercase">Оболочка Древа</span>
+                <span className="font-medium text-slate-200">🌳 {chertogMatrix[chertogId - 1].tree}</span>
+              </div>
+              <div className="bg-black/20 p-1.5 rounded border border-slate-800/30">
+                <span className="text-neutral-500 block text-[8px] uppercase">Высшая Сущность</span>
+                <span className="font-medium text-amber-500">👁️ {chertogMatrix[chertogId - 1].god}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ОЧАГ И ДРОВА ОПУЩЕНЫ НА ЗЕМЛЮ (В самый низ экрана mt-auto mb-2) */}
+          <div className="w-full flex flex-col items-center justify-end mt-auto mb-2 relative z-10 select-none">
+            <div className="relative w-36 h-24 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-emerald-500/10 blur-xl animate-pulse duration-[4000ms] ease-in-out scale-110"></div>
+              <div 
+                className="z-10 text-4xl filter drop-shadow-[0_0_12px_rgba(16,185,129,0.4)] animate-bounce duration-[2500ms] cursor-pointer mb-1" 
+                onClick={() => alert(`Костёр Чертога №${chertogId} разгорается сильнее! Священное дерево ${chertogMatrix[chertogId - 1].tree} даёт тепло.`)}
+              >
+                🔥
+              </div>
+              <div className="absolute bottom-1 z-0 text-xl">🪵</div>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      {/* МЕНЮ НАСТРОЕК ГАЛОЧЕК (Разворачивается под сжатой плашкой балансов на top-11, не перекрывая ⚙️) */}
+      {/* МЕНЮ НАСТРОЕК ГАЛОЧЕК (Шестерёнка на плашке балансов) */}
       {showSettings && (
         <div 
           ref={settingsRef}
@@ -182,29 +246,17 @@ export default function MeadowComponent() {
                     onChange={() => toggleBackgroundVisibility(id)}
                     className="accent-emerald-500 w-3.5 h-3.5 cursor-pointer"
                   />
-                  <span>
-                    Фон {id} {
-                      id === 1 ? '(Поляна)' : 
-                      id === 2 ? '(Изба)' : 
-                      id === 3 ? '(Терем)' :
-                      id === 4 ? '(Артель)' : 
-                      id === 5 ? '(Палата)' :
-                      id === 6 ? '(Двор)' :
-                      id === 7 ? '(Вече)' :
-                      id === 8 ? '(Вырий)' : ''
-                    }
-                  </span>
+                  <span>Фон {id}</span>
                 </label>
               );
             })}
           </div>
           
-          {/* Переключатель фонов для моментальной симуляции чатов */}
           <div className="pt-2 border-t border-slate-700/40 flex items-center justify-between gap-2">
             <span className="text-[11px] text-neutral-500">Симулировать переход на:</span>
             <select 
               value={currentBackground} 
-              onChange={(e) => setCurrentBackground(Number(e.target.value))}
+              onChange={(e) => setInternalBg(Number(e.target.value))}
               className="bg-[#161a1d] border border-slate-700 rounded px-2 py-1 focus:outline-none text-emerald-400 font-mono text-[11px]"
             >
               {Object.keys(chatDatabase).map(id => (
