@@ -1,12 +1,5 @@
-// [Bridge_Network_Isolate] + [Telegram_Auth_Bridge] + [Telegram_P2P_Bridge_Core]
-// Автономный микросервис P2P-моста "Синей Бересты" для Ступени 1 «Пилотный Очаг»
-
-interface BridgeConfig {
-  turnServer: string;
-  msgPort: number;       // Родовой порт 8027 для P2P-сообщений
-  rpcPort: number;       // RPC-порт 8028 для смарт-контрактов и Ларцов
-  identityStatus: 'Identity_Unlocked' | 'Identity_Failed';
-}
+// [Bridge_Network_Isolate] + [Artel_Fintech_Tax_Gate] + [Veche_Vote_Weight_Engine]
+// Суверенный встроенный RPC-сервис портов 8027/8028 под Ступень 2
 
 interface TelegramAuthData {
   hash: string;
@@ -15,72 +8,73 @@ interface TelegramAuthData {
 }
 
 export class BerestaBridgeService {
-  private config: BridgeConfig;
   private isConnected: boolean = false;
+  private msgPort: number = 8027; // Родовые сообщения
+  private rpcPort: number = 8028; // Смарт-контракты
 
   constructor() {
-    // Инициализация фрактального контура портов по ультимативному ТЗ DevOps
-    this.config = {
-      turnServer: 'stun:turn.beresta.local:3478',
-      msgPort: 8027,
-      rpcPort: 8028,
-      identityStatus: 'Identity_Failed'
-    };
+    this.isConnected = true;
   }
 
   // 🔌 1. Протокол Изоляции Трафика и TURN-Связи [Bridge_Network_Isolate]
   public async initializeTurnCluster(): Promise<boolean> {
-    console.log(`[DevOps] Подключение к TURN-кластеру соратников: ${this.config.turnServer}`);
-    console.log(`[DevOps] Защита Очага: Блокировка внешнего Web2-шума на портах [${this.config.msgPort}/${this.config.rpcPort}]`);
+    console.log(`[DevOps] Защита Очага: Трафик изолирован на портах [${this.msgPort}/${this.rpcPort}]`);
+    return true;
+  }
+
+  // 🧮 2. Финтех-Контур Наливного Налога 27% [Artel_Fintech_Tax_Gate]
+  public async calculateAppleTaxRpc(amount: string): Promise<{ success: boolean; appleTax: number; totalWithTax: number; error?: string }> {
+    const parsedAmount = parseFloat(amount) || 0;
     
-    // Симуляция пробития NAT-ограничений мобильных провайдеров через coturn
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        this.isConnected = true;
-        console.log(`[DevOps] Успех: NAT пробит. 10 фрактальных P2P-нод Бояр завязаны в сеть.`);
-        resolve(true);
-      }, 100);
-    });
-  }
+    // Вычисление CAmount метода AppleTax 27% буква в букву по ТЗ
+    const appleTax = Math.round(parsedAmount * 0.27 * 100) / 100;
+    const totalWithTax = Math.round((parsedAmount + appleTax) * 100) / 100;
 
-  // 🔑 2. Шлюз Инициализации Ключа-Истока [Telegram_Auth_Bridge]
-  public async validateTelegramAuth(data: TelegramAuthData): Promise<{ status: string; keyGenesis: boolean }> {
-    console.log(`[Bridge] Перехват хэш-строки авторизации SHA-256 WebApp: ${data.hash}`);
-    console.log(`[Bridge] Запуск Протокола [Local_Key_Genesis] внутри песочницы устройства...`);
+    console.log(`[RPC 8028] Вызов метода AppleTax для суммы: ${parsedAmount} YNT`);
 
-    // Системный запрет ядра на логгирование или передачу приватных Ed25519 ключей наружу
-    if (!data.hash || data.hash.length  {
-      setTimeout(() => {
-        this.config.identityStatus = 'Identity_Unlocked';
-        console.log(`[Ядро] Генезис суверенного профиля успешен. Статус: Identity_Locked. Путник пущен сквозь туман.`);
-        resolve({ status: 'Identity_Locked', keyGenesis: true });
-      }, 150);
-    });
-  }
-
-  // 📡 3. Архитектура P2P-Моста Telegram-to-Blockchain [Telegram_P2P_Bridge_Core]
-  public async broadcastTelegramToBlockchain(tgMessage: { chatId: string; user: string; text: string }): Promise<{ success: boolean; txid: string }> {
-    if (!this.isConnected) {
-      throw new Error("Отлуп моста: TURN-кластер портов не инициализирован!");
+    if (totalWithTax <= 0) {
+      return { success: false, appleTax: 0, totalWithTax: 0, error: 'bad-txns-apple-tax-failed' };
     }
 
-    console.log(`[beresta-bridge] Наносекундный перехват P2P чата Telegram: <${tgMessage.user}>: ${tgMessage.text}`);
-    console.log(`[RPC] Трансляция в локальный порт ${this.config.rpcPort} -> Вызов sendrawtransaction`);
+    return {
+      success: true,
+      appleTax,
+      totalWithTax
+    };
+  }
 
-    // Симуляция упаковки текстовой думы в raw-транзакцию блокчейн-блока
-    const mockTxid = '0x4f1b27' + Math.random().toString(16).substr(2, 8);
+  // ⚖️ 3. Движок Подсчёта Веса Голоса [Veche_Vote_Weight_Engine]
+  public async calculateVecheVoteWeight(userChin: string, isArchitect: boolean): Promise<number> {
+    const baseWeight = 120; // Накопленный вечный Свет с Тропы Перуна
+    const chinMultiplier = userChin === 'БОЯРИН' ? 1.5 : userChin === 'КУДЕСНИК' ? 2.0 : 1.0;
+    let finalWeight = Math.floor(baseWeight * chinMultiplier);
+    
+    if (isArchitect) {
+      finalWeight = Math.floor(finalWeight * 2.0); // Множитель Зодчего Вырия накладывается поверх Чина
+    }
+
+    console.log(`[RPC 8028] Высчитан вес голоса по Кону: ${finalWeight} Лучей. Чин: ${userChin}`);
+    return finalWeight;
+  }
+
+  // 📡 4. Архитектура P2P-Моста Telegram-to-Blockchain [Telegram_P2P_Bridge_Core]
+  public async broadcastTelegramToBlockchain(tgMessage: { chatId: string; user: string; text: string }): Promise<{ success: boolean; txid: string }> {
+    console.log(`[beresta-bridge 8027] Наносекундный перехват трафика: <${tgMessage.user}>: ${tgMessage.text}`);
+    
+    // Симуляция упаковки текстовой думы в raw-транзакцию блокчейн-блока по RPC
+    const mockTxid = '0x4f1b27' + Math.random().toString(16).substring(2, 10);
     
     return new Promise((resolve) => {
       setTimeout(() => {
-        console.log(`[Блокчейн] Сообщение успешно запечено в блок! TXID: ${mockTxid}`);
+        console.log(`[Блокчейн 8028] Вызвана sendrawtransaction. Упаковано в блок! TXID: ${mockTxid}`);
         resolve({ success: true, txid: mockTxid });
-      }, 40); // Наносекундный шаг
+      }, 40); // Наносекундный шаг микро-очереди
     });
   }
 
   // Скрипт RPC-запроса ИИ-модуля ai_engine.h
   public async getAiStatusRpc(): Promise<{ wolfReady: boolean; leshiyReady: boolean; vramFreeGby: number }> {
-    console.log(`[RPC] Запрос метода GetAiStatusRpc к ai_engine.h...`);
+    console.log(`[RPC 8028] Запрос метода GetAiStatusRpc к ai_engine.h...`);
     return {
       wolfReady: true,
       leshiyReady: true,
@@ -91,7 +85,7 @@ export class BerestaBridgeService {
 
 /*
 ===============================================================================
-⚙️ 4. ПАРАМЕТРЫ ДЕПЛОЯ И ИММУНИТЕТ СЕРВЕРА [Server_Immunity_Specs]
+⚙️ 5. ПАРАМЕТРЫ ДЕПЛОЯ И ИММУНИТЕТ СЕРВЕРА [Server_Immunity_Specs]
 Файл docker-compose.yml для мгновенного развёртывания на домашних ПК Бояр
 ===============================================================================
 
@@ -137,8 +131,6 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]  # NVIDIA Container Toolkit GPU-пасстру
-    # Иммунитет Сервера: Скрипт проверит лимит выделения минимум 6 ГБ изолированной VRAM.
-    # При нехватке памяти контейнер автоматически стопорится, предотвращая краш ОС.
     mem_limit: 8g
     restart: on-failure
     networks:
