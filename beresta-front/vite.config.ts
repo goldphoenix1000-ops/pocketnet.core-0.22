@@ -1,11 +1,47 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// [UI_Living_Weather_Core] Конфигурация графического движка Ступени 1 и 2
+// [Server_Immunity_Specs] + [Ecosystem_Onboarding_Governor_Core]
+// Конфигурация Vite с принудительным esbuild-контуром для обхода кэш-ошибок OXC
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(), // Включаем авто-сборку частиц Tailwind v4
-  ],
-})
+  plugins: [react()],
+  // Жестко принуждаем Vite использовать стандартный esbuild вместо капризного oxc
+  esbuild: {
+    target: 'es2022',
+    include: /\.(ts|tsx|js|jsx)$/,
+  },
+  build: {
+    target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        dead_code: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) return 'vendor-core';
+            return 'vendor-ext';
+          }
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
+  server: {
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      overlay: false
+    },
+    allowedHosts: [
+      'catty-crusader-armed.ngrok-free.dev'
+    ],
+    headers: {
+      'ngrok-skip-browser-warning': 'true'
+    }
+  }
+});

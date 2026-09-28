@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+/* Принудительный сброс Web2-отступов для монолитного рендеринга внутри рации */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #10131c;
+  color: #e2e8f0;
+}

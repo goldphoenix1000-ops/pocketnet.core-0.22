@@ -6,15 +6,18 @@ const bridge = new BerestaBridgeService();
 // [UI_Vessel_Vyriy_Market_Core] + [UI_Vessel_Izba_Core] + [Artel_Fintech_Tax_Gate]
 // ПОЛНАЯ ИСПРАВЛЕННАЯ СБОРКА: Мессенджер "Синего Вестника" с возвращенным Фона 8 (Торговый Вырий)
 export default function IzbaComponent() {
-  // 7 Истинных Балансов Казны
-  const [balances, setBalances] = useState({
-    yntPersonal: 1241.00,
-    yntDeposit: 40.00,
-    rayLight: '12 / 24',
-    pathVeles: 450,
-    pathPerun: 120, // Синяя молния ⚡
-    pathSvarog: 380,
-    vecheLock: 'Взведён'
+   // Истинные Балансы Казны с подгрузкой из локальной энергонезависимой памяти компьютера
+  const [balances, setBalances] = useState(() => {
+    const savedYnt = localStorage.getItem('beresta_ynt_personal');
+    return {
+      yntPersonal: savedYnt ? parseFloat(savedYnt) : 1241.00,
+      yntDeposit: 40.00,
+      rayLight: '12 / 24',
+      pathVeles: 450,
+      pathPerun: 120,
+      pathSvarog: 380,
+      vecheLock: 'Взведён'
+    };
   });
 
   const totalGodsRays = balances.pathVeles + balances.pathPerun + balances.pathSvarog;
@@ -132,7 +135,18 @@ export default function IzbaComponent() {
   };
 
   const handleVecheVote = async (proposalId: number, type: 'LUBO' | 'NELUBO') => {
+    // Вытаскиваем текущее число Искорок Зари из баланса
+    const [currentRays, maxRays] = balances.rayLight.split(' / ').map(Number);
+    if (currentRays < 1 && type === 'LUBO') {
+      alert("Отлуп Вече: Твои Искорки Зари угасли! Жди нового Рассвета.");
+      return;
+    }
+
     const calculatedWeight = await bridge.calculateVecheVoteWeight(vecheChin, isArchitectModifier);
+    const newRays = type === 'LUBO' ? currentRays - 1 : currentRays;
+
+    setBalances(prev => ({ ...prev, rayLight: `${newRays} / ${maxRays}` }));
+
     setVecheProposals(prev => prev.map(p => {
       if (p.id === proposalId) {
         if (type === 'LUBO') {
@@ -143,6 +157,8 @@ export default function IzbaComponent() {
       }
       return p;
     }));
+    
+    alert(`🟢 Кон принят! Твой Чин весит ${calculatedWeight} Лучей. Искорка запечена на порту 8028.`);
   };
 
   const handleBirchSpringFlow = async () => {
@@ -151,11 +167,18 @@ export default function IzbaComponent() {
       return;
     }
     setIsSpringFlowing(true);
-    setBalances(prev => ({ ...prev, yntPersonal: prev.yntPersonal - 1 }));
+    
+    // Вычисляем новый баланс Ларца
+    const newYntPersonal = balances.yntPersonal - 1;
+    
+    // Физически запекаем и сохраняем новый баланс на жесткий диск ноутбука!
+    localStorage.setItem('beresta_ynt_personal', newYntPersonal.toString());
+    setBalances(prev => ({ ...prev, yntPersonal: newYntPersonal }));
+
     setTimeout(() => {
       setIsSpringFlowing(false);
       setIsYagaUnlocked(true);
-      alert("✨ Хрустальный звон: 1 YNT безвозвратно сожжен! Скрытый 10-й токен Яги разблокирован!");
+      alert("✨ Хрустальный звон: 1 YNT безвозвратно сожжен в пассивный пул! Скрытый токен Яги разблокирован!");
     }, 2000);
   };
 
@@ -350,7 +373,21 @@ export default function IzbaComponent() {
                   <span className="text-[7.5px] text-neutral-500 block uppercase">Выход в Пул</span>
                   <span className="text-xs font-bold text-slate-200">{serverTotal} YNT</span>
                 </div>
-                <button onClick={() => alert(`Транзакция запечена в ядре: ${serverTotal} YNT через RPC-мост 8028.`)} className="px-2.5 py-1 bg-emerald-700 text-white text-[9px] font-bold rounded-lg cursor-pointer">💸 Оплатить</button>
+                <button 
+                  onClick={() => {
+                    if (balances.yntPersonal < serverTotal) {
+                      alert("Отлуп ядра: Недостаточно Янтаря для оплаты сделки в Артели!");
+                      return;
+                    }
+                    const updatedYnt = balances.yntPersonal - serverTotal;
+                    localStorage.setItem('beresta_ynt_personal', updatedYnt.toString());
+                    setBalances(prev => ({ ...prev, yntPersonal: updatedYnt }));
+                    alert(`💸 Успех! Списано ${serverTotal} YNT (Налог ${serverTax} YNT учтён). Блок запечён в RPC 8028.`);
+                  }} 
+                  className="px-2.5 py-1 bg-emerald-750 text-white text-[9px] font-bold rounded-lg cursor-pointer hover:bg-emerald-600 transition-all"
+                >
+                  💸 Оплатить
+                </button>
               </div>
             </div>
           )}

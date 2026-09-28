@@ -1,13 +1,36 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>beresta-front</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Синяя Береста — Зеркальце Портала</title>
+
+    <!-- [Server_Immunity_Specs] Навья отмычка против Web2-экрана ngrok для WebView Telegram -->
+    <script>
+      // Перехватываем нативный метод fetch, чтобы гарантированно внедрить заголовок пропуска
+      const originalFetch = window.fetch;
+      window.fetch = function(...args) {
+        if (args[1] === undefined) args[1] = {};
+        if (args[1].headers === undefined) args[1].headers = {};
+        
+        // Впекаем заголовок обхода предупреждения ngrok-abuse во все пакеты
+        if (args[1].headers instanceof Headers) {
+          args[1].headers.set('ngrok-skip-browser-warning', 'true');
+        } else {
+          args[1].headers['ngrok-skip-browser-warning'] = 'true';
+        }
+        return originalFetch.apply(this, args);
+      };
+      
+      // Записываем куки-ключ пропуска в память браузера смартфона (на случай редиректов)
+      document.cookie = "ngrok-skip-browser-warning=true; path=/; max-age=31536000";
+    </script>
+      <!-- Подключаем нативное ядро Telegram SDK для управления экраном -->
+    <script src="https://telegram.org"></script>
   </head>
-  <body>
-    <div id="root"></div>
+</head>
+  <body class="bg-[#10131c] text-slate-200 select-none overflow-hidden">
+    <div id="root" class="w-screen h-screen"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
